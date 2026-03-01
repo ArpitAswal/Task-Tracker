@@ -1,0 +1,292 @@
+# Task Tracker - Setup Guide
+
+## 📋 Phase 1: Authentication & Onboarding ✅
+
+This phase includes:
+- ✅ Login Screen with Remember Me & Forgot Password
+- ✅ Signup Screen
+- ✅ Forgot Password Screen
+- ✅ Onboarding Screen with smooth page indicators
+- ✅ Complete theming system (Light/Dark/System)
+- ✅ Localization support (English & Hindi)
+- ✅ MVVM Architecture with Provider
+- ✅ Firebase Authentication & Firestore ready
+- ✅ Secure storage for credentials
+- ✅ Responsive UI for different devices
+
+---
+
+## 🚀 Setup Instructions
+
+### Step 1: Create Flutter Project
+```bash
+flutter create task_tracker
+cd task_tracker
+```
+
+### Step 2: Replace Files
+1. Replace `pubspec.yaml` with the provided version
+2. Copy all the files into their respective directories following this structure:
+
+```
+lib/
+├── core/
+│   ├── constants/
+│   │   └── app_constants.dart
+│   ├── localization/
+│   │   └── app_localizations.dart
+│   ├── services/
+│   │   └── storage_service.dart
+│   ├── theme/
+│   │   ├── app_colors.dart
+│   │   ├── app_theme.dart
+│   │   └── text_styles.dart
+│   └── utils/
+│       ├── curved_clipper.dart
+│       └── validators.dart
+├── data/
+│   ├── models/
+│   │   └── user_model.dart
+│   └── repositories/
+│       └── auth_repository.dart
+├── presentation/
+│   ├── providers/
+│   │   ├── auth_provider.dart
+│   │   ├── locale_provider.dart
+│   │   └── theme_provider.dart
+│   ├── screens/
+│   │   ├── auth/
+│   │   │   ├── forgot_password_screen.dart
+│   │   │   ├── login_screen.dart
+│   │   │   └── signup_screen.dart
+│   │   └── onboarding/
+│   │       └── onboarding_screen.dart
+│   └── widgets/
+│       └── common/
+│           ├── custom_button.dart
+│           └── custom_text_field.dart
+└── main.dart
+```
+
+### Step 3: Install Dependencies
+```bash
+flutter pub get
+```
+
+### Step 4: Setup Firebase
+
+1. **Create Firebase Project:**
+   - Go to [Firebase Console](https://console.firebase.google.com/)
+   - Create a new project
+   - Enable Authentication > Email/Password
+   - Create Firestore Database
+
+2. **Add Firebase to Android:**
+   ```bash
+   # Install FlutterFire CLI
+   dart pub global activate flutterfire_cli
+
+   # Configure Firebase
+   flutterfire configure
+   ```
+
+   This will create `firebase_options.dart` automatically.
+
+3. **Add Firebase to iOS:**
+   - Download `GoogleService-Info.plist`
+   - Add to `ios/Runner` directory
+   - Update `Info.plist` with required permissions
+
+4. **Uncomment Firebase initialization in main.dart:**
+   ```dart
+   // Uncomment these lines in main.dart
+   import 'firebase_options.dart';
+
+   await Firebase.initializeApp(
+     options: DefaultFirebaseOptions.currentPlatform,
+   );
+   ```
+
+### Step 5: Add Assets
+
+1. Create `assets/images/` directory
+2. Add these images (you can use placeholders):
+   - `login_page.png`
+   - `signup_page.png`
+   - `onboarding_page.png`
+   - `app_logo.png` (optional)
+
+3. Update `pubspec.yaml` if needed:
+   ```yaml
+   flutter:
+     assets:
+       - assets/images/
+   ```
+
+### Step 6: Add Fonts (Optional)
+
+1. Download Poppins font from [Google Fonts](https://fonts.google.com/specimen/Poppins)
+2. Create `fonts/` directory
+3. Add font files:
+   - `Poppins-Regular.ttf`
+   - `Poppins-Medium.ttf`
+   - `Poppins-SemiBold.ttf`
+   - `Poppins-Bold.ttf`
+
+Or remove font configuration from `pubspec.yaml` to use system fonts.
+
+### Step 7: Android Configuration
+
+Update `android/app/build.gradle`:
+```gradle
+android {
+    defaultConfig {
+        minSdkVersion 21  // Changed from 19
+        targetSdkVersion 33
+    }
+}
+```
+
+### Step 8: iOS Configuration
+
+Update `ios/Podfile`:
+```ruby
+platform :ios, '12.0'  # Changed from 9.0
+```
+
+---
+
+## ▶️ Running the App
+
+```bash
+# For Android
+flutter run
+
+# For iOS
+flutter run
+
+# For Web (limited functionality)
+flutter run -d chrome
+```
+
+---
+
+## 🎨 Features Implemented
+
+### Authentication Flow
+1. **Splash Screen** → Checks login status
+2. **Onboarding** → First-time users only
+3. **Login/Signup** → Full validation & error handling
+4. **Remember Me** → Secure credential storage
+5. **Forgot Password** → Password reset email
+
+### Theming
+- Light Mode ☀️
+- Dark Mode 🌙
+- System Mode (auto-detect)
+- Persistent theme preference
+
+### Localization
+- English 🇺🇸
+- Hindi 🇮🇳
+- Easy to add more languages
+
+### Security
+- Secure credential storage using `flutter_secure_storage`
+- Password validation (min 6 chars)
+- Email format validation
+- Firebase security rules ready
+
+---
+
+## 🧪 Testing Without Firebase
+
+If you want to test the UI without setting up Firebase:
+
+1. Comment out Firebase initialization in `main.dart`
+2. Replace `AuthRepository` methods with mock implementations
+3. Use dummy data for testing
+
+---
+
+## 📱 Responsive Design
+
+The app works on:
+- Small phones (320px width)
+- Regular phones (375px - 428px)
+- Large phones (428px+)
+- Tablets
+- Both iOS and Android
+
+---
+
+## 🔧 Troubleshooting
+
+### Common Issues:
+
+**1. Firebase not initialized:**
+```dart
+// Ensure this is uncommented in main.dart
+await Firebase.initializeApp(
+  options: DefaultFirebaseOptions.currentPlatform,
+);
+```
+
+**2. Assets not found:**
+```bash
+flutter clean
+flutter pub get
+```
+
+**3. Dependency conflicts:**
+```bash
+flutter pub upgrade
+```
+
+**4. Build errors:**
+```bash
+cd android && ./gradlew clean
+cd ios && pod install
+```
+
+---
+
+## 📝 Next Steps (Phase 2)
+
+After authentication is working, we'll implement:
+1. Task Management (CRUD operations)
+2. Task lists (Pending/Completed tabs)
+3. Local storage with Hive
+4. Firebase sync
+5. Profile screen
+6. Settings screen
+
+---
+
+## 🤝 Need Help?
+
+If you encounter any issues:
+1. Check the error message carefully
+2. Ensure all dependencies are installed
+3. Verify Firebase configuration
+4. Make sure assets are in the correct location
+5. Ask me for specific help!
+
+---
+
+## ✅ Checklist Before Testing
+
+- [ ] All files copied to correct directories
+- [ ] `pubspec.yaml` updated
+- [ ] Dependencies installed (`flutter pub get`)
+- [ ] Firebase configured (or commented out)
+- [ ] Assets added (at minimum, placeholder images)
+- [ ] Android minSdkVersion set to 21
+- [ ] iOS platform version set to 12.0
+- [ ] App runs without errors
+
+---
+
+**Ready to test?** Run `flutter run` and you should see the splash screen, then onboarding (first time) or login screen!
+
+Let me know if you face any issues during setup. 🚀

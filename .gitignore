@@ -1,0 +1,39 @@
+# ===============================
+# 🔐 Secrets & Credentials
+# ===============================
+.env
+.env.*
+*.jks
+*.keystore
+key.properties
+
+# Firebase & Google
+android/app/google-services.json
+ios/Runner/GoogleService-Info.plist
+lib/firebase_options.dart
+firebase.json
+
+# ===============================
+# 🧱 Flutter / Dart
+# ===============================
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.pub-cache/
+.pub/
+build/
+
+# ===============================
+# 🧠 IDE
+# ===============================
+.idea/
+.vscode/
+*.iml
+
+# ===============================
+# 🖥 System
+# ===============================
+.DS_Store
+*.log
+*.swp
