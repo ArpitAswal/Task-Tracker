@@ -23,19 +23,19 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   // Onboarding data
   List<OnboardingModel> get _onboardingPages => [
     OnboardingModel(
-      image: AppConstants.onboardingImage,
-      title: AppLocalizations.of(context)!.onboardingTitle,
-      description: AppLocalizations.of(context)!.onboardingDescription,
+      image: AppConstants.onboardingFirst,
+      title: AppLocalizations.of(context)?.translate('onboarding_first_title') ?? '',
+      description: AppLocalizations.of(context)?.translate('onboarding_first_description') ?? '',
     ),
     OnboardingModel(
-      image: "AppConstants.onboardingImage",
-      title: AppLocalizations.of(context)!.onboardingTitle,
-      description: AppLocalizations.of(context)!.onboardingDescription,
+      image: AppConstants.onboardingSecond,
+      title: AppLocalizations.of(context)?.translate('onboarding_second_title') ?? '',
+      description: AppLocalizations.of(context)?.translate('onboarding_second_description') ?? '',
     ),
     OnboardingModel(
-      image: AppConstants.onboardingImage,
-      title: AppLocalizations.of(context)!.onboardingTitle,
-      description: AppLocalizations.of(context)!.onboardingDescription,
+      image: AppConstants.onboardingThird,
+      title: AppLocalizations.of(context)?.translate('onboarding_third_title') ?? '',
+      description: AppLocalizations.of(context)?.translate('onboarding_third_description') ?? '',
     ),
     // Add more onboarding pages here in the future
   ];

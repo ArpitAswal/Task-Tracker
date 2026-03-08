@@ -93,6 +93,12 @@ class AppLocalizations {
       'onboarding_description':
           'This productive tool is designed to help you better manage your task project-wise conveniently!',
       'lets_start': "Let's Start",
+      'onboarding_first_title': 'Organize Your Tasks',
+      'onboarding_first_description': 'Easily create and organize all your tasks in one place.',
+      'onboarding_second_title': 'Set Reminders & Deadlines',
+      'onboarding_second_description': 'Set deadlines and get tainely reminders to stay on track.',
+      'onboarding_third_title': 'Track Your Progress',
+      'onboarding_third_description': 'Track your progress and complete tasks efficiently.',
 
       // Email Verification
       'verify_email': 'Verify your email',
@@ -336,6 +342,12 @@ class AppLocalizations {
       'onboarding_description':
           'यह उत्पादक उपकरण आपको अपने कार्यों को बेहतर तरीके से प्रबंधित करने में मदद करने के लिए डिज़ाइन किया गया है!',
       'lets_start': 'शुरू करें',
+      'onboarding_first_title': 'अपने कार्यों को व्यवस्थित करें',
+      'onboarding_first_description': 'अपने सभी कार्यों को एक ही स्थान पर आसानी से बनाएं और व्यवस्थित करें।',
+      'onboarding_second_title': 'रिमाइंडर और समयसीमा निर्धारित करें',
+      'onboarding_second_description': 'समय सीमा निर्धारित करें और नियमित अनुस्मारक प्राप्त करें ताकि आप अपने लक्ष्य पर कायम रह सकें।',
+      'onboarding_third_title': 'अपनी प्रगति को ट्रैक करें',
+      'onboarding_third_description': 'अपनी प्रगति पर नज़र रखें और कार्यों को कुशलतापूर्वक पूरा करें।',
 
       // Email Verification
       'verify_email': 'अपना ईमेल सत्यापित करें',
@@ -535,8 +547,6 @@ class AppLocalizations {
   String get forgotPasswordTitle => translate('forgot_password_title');
   String get forgotPasswordSubtitle => translate('forgot_password_subtitle');
   String get submit => translate('submit');
-  String get onboardingTitle => translate('onboarding_title');
-  String get onboardingDescription => translate('onboarding_description');
   String get letsStart => translate('lets_start');
   String get fieldRequired => translate('field_required');
   String get phoneRequired => translate('phone_required');

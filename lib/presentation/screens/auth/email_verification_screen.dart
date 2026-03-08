@@ -23,7 +23,8 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
   int resendCooldown = 60;
   bool canResend = false;
   late AuthProvider _authProvider;
-  late Timer? runningTimer;
+  Timer? runningTimer;
+  bool _argsRead = false;
 
   @override
   void initState() {
@@ -31,6 +32,26 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
     _authProvider = context.read<AuthProvider>();
     startVerificationCheck();
     startCooldown();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Read route arguments only once
+    if (!_argsRead) {
+      _argsRead = true;
+      final args =
+          ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+      final fromLogin = args?['fromLogin'] ?? false;
+      if (fromLogin) {
+        // Coming from login — allow immediate resend (skip initial cooldown)
+        runningTimer?.cancel();
+        setState(() {
+          canResend = true;
+          resendCooldown = 0;
+        });
+      }
+    }
   }
 
   void startVerificationCheck() {
@@ -58,7 +79,11 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
           );
 
           if (mounted) {
-            AppRoutes.navigateAndRemoveUntil(context, AppRoutes.profileSetup);
+            if(_authProvider.userData == null && _authProvider.errorMessage == 'not-found') {
+              AppRoutes.navigateAndRemoveUntil(context, AppRoutes.profileSetup);
+            } else{
+              AppRoutes.navigateAndRemoveUntil(context, AppRoutes.home);
+            }
           }
         }
       }
@@ -79,6 +104,7 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
   }
 
   Future<void> resendEmail() async {
+    setState(() => canResend = true);
     await _authProvider.resendEmail();
     startCooldown();
   }
@@ -94,9 +120,6 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
     final loc = AppLocalizations.of(context);
-    final args =
-        ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>;
-    canResend = args['fromLogin'] ?? false;
 
     return Scaffold(
       body: SafeArea(

@@ -171,7 +171,9 @@ class UserModel extends HiveObject {
       email: json['email'] as String,
       displayName: json['displayName'] as String?,
       photoUrl: json['photoUrl'] as String?,
-      createdAt: (json['createdAt'] as Timestamp).toDate(),
+      createdAt: json['createdAt'] != null
+       ? (json['createdAt'] as Timestamp).toDate()
+      : DateTime.now(),
       lastLoginAt: json['lastLoginAt'] != null
           ? (json['lastLoginAt'] as Timestamp).toDate()
           : null,

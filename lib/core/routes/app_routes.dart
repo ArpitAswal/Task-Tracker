@@ -9,6 +9,7 @@ import '../../presentation/screens/auth/forgot_password_screen.dart';
 import '../../presentation/screens/exception/exception_screen.dart';
 import '../../presentation/screens/home_dashboard_screen.dart';
 import '../../presentation/screens/onboarding/onboarding_screen.dart';
+import '../../presentation/screens/setting/setting_screen.dart';
 import '../../presentation/screens/splash/splash_screen.dart';
 
 /// ✅ CORRECTED: Centralized route management for the entire app
@@ -330,9 +331,7 @@ class AppRoutes {
 
       case setting:
         return _buildRoute(
-          const Scaffold(
-            body: Center(child: Text('Settings - Coming in Phase 2')),
-          ),
+          const SettingScreen(),
           settings,
         );
 

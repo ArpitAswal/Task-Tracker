@@ -39,6 +39,9 @@ class AppConstants {
   static const String signupImage = 'assets/images/signup_page.png';
   static const String onboardingImage = 'assets/images/onboarding_page.png';
   static const String appLogo = 'assets/images/app_logo.png';
+  static const String onboardingFirst = 'assets/images/onboarding_first.png';
+  static const String onboardingSecond = 'assets/images/onboarding_second.png';
+  static const String onboardingThird = 'assets/images/onboarding_third.png';
 
   // Lottie Assets
   static const String splashLottie = "assets/lottie/splash.json";

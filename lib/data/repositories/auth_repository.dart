@@ -210,7 +210,15 @@ class AuthRepository {
           .update(data);
     } catch (e) {
       debugPrint('updateDocField failed: $e');
-      throw 'unexpected_error';
+      if(e.toString().contains('Some requested document was not found')){
+        // Save user data to Firestore
+        await _firestore
+            .collection(FirebaseCollections.users)
+            .doc(uid)
+            .set(data);
+      } else {
+        rethrow;
+      }
     }
   }
 

@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
 import '../../core/constants/enums.dart';
+import '../../core/services/notification_service.dart';
 import '../../data/repositories/task_repository.dart';
 import '../../data/models/task_model.dart';
 
@@ -370,6 +371,11 @@ class TaskProvider with ChangeNotifier {
       // Save task
       await _taskRepository.createTask(task);
 
+      // Schedule notification if task has reminder
+      if (task.hasReminder) {
+        await NotificationService.scheduleTaskReminder(task);
+      }
+
       // Reload tasks
       await loadTasks();
 
@@ -408,6 +414,13 @@ class TaskProvider with ChangeNotifier {
     try {
       // Save updated task
       await _taskRepository.updateTask(updatedTask);
+
+      // Update notification: schedule or cancel based on reminder setting
+      if (updatedTask.hasReminder && !updatedTask.isCompleted) {
+        await NotificationService.scheduleTaskReminder(updatedTask);
+      } else {
+        await NotificationService.cancelTaskReminder(updatedTask.id);
+      }
 
       // Reload tasks
       await loadTasks();
@@ -530,7 +543,8 @@ class TaskProvider with ChangeNotifier {
 
       await updateTask(updatedTask: _tasks[index]);
       if (!task.isCompleted) {
-        // Was incomplete, now completed → trigger streak
+        // Was incomplete, now completed → trigger streak + cancel reminder
+        await NotificationService.cancelTaskReminder(task.id);
         onTaskCompleted?.call();
       }
     }
@@ -552,6 +566,9 @@ class TaskProvider with ChangeNotifier {
     notifyListeners();
 
     try {
+      // Cancel any scheduled notification
+      await NotificationService.cancelTaskReminder(taskId);
+
       await _taskRepository.deleteTask(taskId);
       await loadTasks();
       return true;
@@ -743,6 +760,7 @@ class TaskProvider with ChangeNotifier {
     _errorMessage = null;
     _userId = null;
     _currentFilter = TaskFilter.all;
+    NotificationService.cancelAllReminders();
     notifyListeners();
   }
 }

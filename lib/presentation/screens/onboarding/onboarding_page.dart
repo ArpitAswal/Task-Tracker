@@ -24,7 +24,7 @@ class OnboardingPage extends StatelessWidget {
           // Image
           AppImage(
             image: AppImageData.asset(data.image),
-            height: size.height * 0.4,
+            height: size.height * 0.5,
             width: double.infinity,
             borderRadius: BorderRadius.circular(12),
             errorBuilder: (context, error, stackTrace) {
@@ -46,20 +46,25 @@ class OnboardingPage extends StatelessWidget {
                 Text(
                   data.title,
                   softWrap: true,
-                  style: theme.textTheme.headlineMedium?.copyWith(
+                  style: theme.textTheme.displayLarge?.copyWith(
                     fontWeight: FontWeight.bold,
                   ),
                   textAlign: TextAlign.center,
                 ),
-                const SizedBox(height: 2),
+                const SizedBox(height: 8),
                 // Description
-                Text(
-                  data.description,
-                  softWrap: true,
-                  style: theme.textTheme.headlineSmall,
-                  textAlign: TextAlign.center,
-                  maxLines: 8,
-                  overflow: TextOverflow.ellipsis,
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 40.0),
+                  child: Text(
+                    data.description,
+                    softWrap: true,
+                    style: theme.textTheme.headlineSmall?.copyWith(
+                      fontWeight: FontWeight.w500,
+                    ),
+                    textAlign: TextAlign.center,
+                    maxLines: 8,
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ),
               ],
             ),

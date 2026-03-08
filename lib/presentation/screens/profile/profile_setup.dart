@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import 'package:task_tracker/core/localization/app_localizations.dart';
+import 'package:task_tracker/core/routes/app_routes.dart';
 import 'package:task_tracker/core/utils/app_validators.dart';
 import 'package:task_tracker/core/utils/extensions/context_extension.dart';
 import 'package:task_tracker/core/utils/extensions/widget_extensions.dart';
@@ -246,6 +247,8 @@ class _ProfileSetupState extends State<ProfileSetup>
         );
         if (widget.isEditing && Navigator.of(context).canPop()) {
           Navigator.of(context).pop();
+        } else{
+          AppRoutes.navigateAndRemoveUntil(context, AppRoutes.home);
         }
       } else {
         context.showErrorToast(

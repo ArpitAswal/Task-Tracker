@@ -45,7 +45,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return Consumer<AuthProvider>(
       builder: (context, authProvider, _) {
         final user = authProvider.userData;
-
         // Show setup form if profile is not complete
         if (user == null || !user.isProfileComplete) {
           return const ProfileSetup(isEditing: false);

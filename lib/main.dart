@@ -9,6 +9,7 @@ import 'core/routes/app_routes.dart';
 import 'core/theme/app_theme.dart';
 import 'core/localization/app_localizations.dart';
 import 'core/services/storage_service.dart';
+import 'core/services/notification_service.dart';
 import 'core/constants/app_constants.dart';
 
 import 'core/utils/exception_handling/effect_listener.dart';
@@ -25,6 +26,10 @@ void main() async {
 
   // ✅ Initialize Storage (only once, at app start)
   await StorageService().initialize();
+
+  // ✅ Initialize Notifications
+  await NotificationService.initialize();
+
 
   // Set system UI overlay style
   SystemChrome.setSystemUIOverlayStyle(
