@@ -216,6 +216,9 @@ class TaskProvider with ChangeNotifier {
           _tasks = localTasks;
         }
       }
+
+      // Check for overdue tasks and show daily notification if needed
+      await NotificationService.checkAndNotifyOverdueTasks(_tasks);
     } catch (e) {
       _errorMessage = e.toString();
     } finally {
@@ -340,7 +343,7 @@ class TaskProvider with ChangeNotifier {
     required DateTime endDate,
     TaskPriority priority = TaskPriority.medium,
     DateTime? startDate,
-    int? reminderHour,
+    int? reminderHour = 24,
     TaskCategory category = TaskCategory.other,
   }) async {
     if (_userId == null) {
@@ -449,6 +452,10 @@ class TaskProvider with ChangeNotifier {
 
     try {
       await _taskRepository.markTaskAsCompleted(taskId);
+
+      // Cancel reminder — task is done, no need for notification
+      await NotificationService.cancelTaskReminder(taskId);
+
       await loadTasks();
       onTaskCompleted?.call(); // Trigger streak update
       _setLoading(false);

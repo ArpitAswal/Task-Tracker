@@ -7,16 +7,19 @@ import 'package:timezone/timezone.dart' as tz;
 
 import '../../data/models/task_model.dart';
 import '../constants/app_constants.dart';
+import '../localization/app_localizations.dart';
 
 /// Notification service for scheduling task reminders
 ///
 /// Uses [FlutterLocalNotificationsPlugin] to schedule local notifications
-/// 1 hour before a task's due date. Supports global enable/disable toggle.
+/// [reminderHour] hours after task creation. Supports global enable/disable toggle.
 class NotificationService {
   static final FlutterLocalNotificationsPlugin _notifications =
       FlutterLocalNotificationsPlugin();
 
   static bool _initialized = false;
+  static TimezoneInfo? _timezone;
+  static List<TimezoneInfo> _availableTimezones = [];
 
   /// Initialize the notification plugin and timezone data
   ///
@@ -27,8 +30,11 @@ class NotificationService {
 
     // Initialize timezone
     tz.initializeTimeZones();
-    final timeZoneName = await FlutterTimezone.getLocalTimezone();
-    tz.setLocalLocation(tz.getLocation('America/Detroit'));
+    _timezone = await FlutterTimezone.getLocalTimezone();
+    _availableTimezones = await FlutterTimezone.getAvailableTimezones();
+    _availableTimezones.sort((a, b) => a.identifier.compareTo(b.identifier));
+    print("availableTimeZones:  -> ${_availableTimezones.toList()}");
+    tz.setLocalLocation(tz.getLocation(_timezone?.identifier ?? 'Unknown'));
 
     // Android init settings
     const androidSettings =
@@ -49,21 +55,30 @@ class NotificationService {
     await _notifications.initialize(settings);
 
     // Request permissions on Android 13+
-    await _notifications
+    final androidPlugin = _notifications
         .resolvePlatformSpecificImplementation<
-            AndroidFlutterLocalNotificationsPlugin>()
-        ?.requestNotificationsPermission();
+            AndroidFlutterLocalNotificationsPlugin>();
+    final granted = await androidPlugin?.requestNotificationsPermission();
+
+    // Persist permission state in SharedPreferences
+    if (granted == true) {
+      await setNotificationEnabled(true);
+    }
 
     _initialized = true;
     debugPrint('🔔 NotificationService initialized');
   }
 
-  /// Schedule a reminder notification 1 hour before [task.endDate]
+  /// Schedule two reminder notifications for a task:
+  ///   1. One hour before the reminder time (early heads-up)
+  ///   2. At the exact reminder time
+  ///
+  /// The reminder time is calculated as [task.createdAt] + [task.reminderHour].
   ///
   /// Skips scheduling if:
   /// - Notifications are globally disabled
   /// - The task has no reminder (`hasReminder == false`)
-  /// - The scheduled time (1 hour before due) is already in the past
+  /// - The scheduled time is already in the past
   static Future<void> scheduleTaskReminder(TaskModel task) async {
     // Check global toggle
     if (!await isNotificationEnabled()) return;
@@ -71,50 +86,79 @@ class NotificationService {
     // Check per-task reminder
     if (!task.hasReminder) return;
 
-    final scheduledDate = task.endDate.subtract(const Duration(hours: 1));
+    final now = DateTime.now();
+    final loc = await _getLocalizations();
 
-    // Don't schedule if the reminder time is in the past
-    if (scheduledDate.isBefore(DateTime.now())) return;
+    // Reminder time = task end date (the due date selected by the user)
+    final exactReminderTime = task.endDate;
 
-    final tzScheduledDate = tz.TZDateTime.from(scheduledDate, tz.local);
+    // 1 hour before the exact reminder time
+    final earlyReminderTime =
+        exactReminderTime.subtract(const Duration(hours: 1));
+
+    const notificationDetails = NotificationDetails(
+      android: AndroidNotificationDetails(
+        AppConstants.notificationChannelId,
+        AppConstants.notificationChannelName,
+        channelDescription: AppConstants.notificationChannelDescription,
+        importance: Importance.high,
+        priority: Priority.high,
+        icon: '@mipmap/ic_launcher',
+      ),
+      iOS: DarwinNotificationDetails(
+        presentAlert: true,
+        presentBadge: true,
+        presentSound: true,
+      ),
+    );
 
     try {
-      await _notifications.zonedSchedule(
-        task.id.hashCode,
-        'Task Reminder',
-        'Task "${task.title}" is due in 1 hour!',
-        tzScheduledDate,
-        NotificationDetails(
-          android: AndroidNotificationDetails(
-            AppConstants.notificationChannelId,
-            AppConstants.notificationChannelName,
-            channelDescription: AppConstants.notificationChannelDescription,
-            importance: Importance.high,
-            priority: Priority.high,
-            icon: '@mipmap/ic_launcher',
-          ),
-          iOS: const DarwinNotificationDetails(
-            presentAlert: true,
-            presentBadge: true,
-            presentSound: true,
-          ),
-        ),
-        androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
-        matchDateTimeComponents: null,
-      );
-      debugPrint('🔔 Scheduled reminder for "${task.title}" at $scheduledDate');
+      // Notification 1: 1 hour before the reminder time
+      if (earlyReminderTime.isAfter(now)) {
+        final tzEarlyTime = tz.TZDateTime.from(earlyReminderTime, tz.local);
+        await _notifications.zonedSchedule(
+          task.id.hashCode,
+          loc.translate('notification_task_reminder'),
+          loc.translate('notification_task_due_in_1hr')
+              .replaceAll('{taskTitle}', task.title),
+          tzEarlyTime,
+          notificationDetails,
+          androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+          matchDateTimeComponents: null,
+        );
+        debugPrint(
+            '🔔 Scheduled early reminder for "${task.title}" at $earlyReminderTime');
+      }
+
+      // Notification 2: At the exact reminder time
+      if (exactReminderTime.isAfter(now)) {
+        final tzExactTime = tz.TZDateTime.from(exactReminderTime, tz.local);
+        await _notifications.zonedSchedule(
+          task.id.hashCode + 1,
+          loc.translate('notification_task_due_now'),
+          loc.translate('notification_task_due_now_msg')
+              .replaceAll('{taskTitle}', task.title),
+          tzExactTime,
+          notificationDetails,
+          androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+          matchDateTimeComponents: null,
+        );
+        debugPrint(
+            '🔔 Scheduled exact reminder for "${task.title}" at $exactReminderTime');
+      }
     } catch (e) {
       debugPrint('🔔 Failed to schedule reminder: $e');
     }
   }
 
-  /// Cancel a scheduled reminder for a specific task
+  /// Cancel both scheduled reminders for a specific task
   static Future<void> cancelTaskReminder(String taskId) async {
     try {
       await _notifications.cancel(taskId.hashCode);
-      debugPrint('🔔 Cancelled reminder for task $taskId');
+      await _notifications.cancel(taskId.hashCode + 1);
+      debugPrint('🔔 Cancelled reminders for task $taskId');
     } catch (e) {
-      debugPrint('🔔 Failed to cancel reminder: $e');
+      debugPrint('🔔 Failed to cancel reminders: $e');
     }
   }
 
@@ -137,7 +181,7 @@ class NotificationService {
   /// Returns `true` if enabled (default), `false` if user disabled them
   static Future<bool> isNotificationEnabled() async {
     final prefs = await SharedPreferences.getInstance();
-    return prefs.getBool(StorageKeys.notificationEnabled) ?? true;
+    return prefs.getBool(StorageKeys.notificationEnabled) ?? false;
   }
 
   /// Set the global notification enabled/disabled flag
@@ -152,5 +196,94 @@ class NotificationService {
       await cancelAllReminders();
     }
     debugPrint('🔔 Notifications ${enabled ? "enabled" : "disabled"}');
+  }
+
+  // ===========================================================================
+  // DAILY OVERDUE CHECK
+  // ===========================================================================
+
+  /// Fixed notification ID for the general overdue reminder
+  static const int _overdueNotificationId = 999999;
+
+  /// Check for overdue tasks and show a one-time daily notification
+  ///
+  /// Call this on app launch. It will:
+  /// 1. Skip if notifications are disabled
+  /// 2. Skip if the notification was already shown today
+  /// 3. Find tasks that are incomplete AND overdue by more than 1 day
+  /// 4. Show a single general notification with the overdue count
+  /// 5. Save today's date so it won't fire again until tomorrow
+  static Future<void> checkAndNotifyOverdueTasks(List<TaskModel> tasks) async {
+    if (!await isNotificationEnabled()) return;
+
+    final prefs = await SharedPreferences.getInstance();
+    final today = DateTime.now();
+    final todayStr =
+        '${today.year}-${today.month.toString().padLeft(2, '0')}-${today.day.toString().padLeft(2, '0')}';
+
+    // Check if we already showed this notification today
+    final lastDate =
+        prefs.getString(StorageKeys.lastOverdueNotificationDate) ?? '';
+    if (lastDate == todayStr) {
+      debugPrint('🔔 Overdue notification already shown today');
+      return;
+    }
+
+    // Find incomplete tasks overdue by more than 1 day
+    final oneDayAgo = today.subtract(const Duration(days: 1));
+    final overdueTasks = tasks
+        .where((t) => !t.isCompleted && t.endDate.isBefore(oneDayAgo))
+        .toList();
+
+    if (overdueTasks.isEmpty) {
+      debugPrint('🔔 No overdue tasks found');
+      return;
+    }
+
+    final loc = await _getLocalizations();
+
+    // Show the general overdue notification
+    try {
+      await _notifications.show(
+        _overdueNotificationId,
+        loc.translate('notification_overdue_title'),
+        loc.translate('notification_overdue_msg')
+            .replaceAll('{count}', overdueTasks.length.toString()),
+        const NotificationDetails(
+          android: AndroidNotificationDetails(
+            AppConstants.notificationChannelId,
+            AppConstants.notificationChannelName,
+            channelDescription: AppConstants.notificationChannelDescription,
+            importance: Importance.high,
+            priority: Priority.high,
+            icon: '@mipmap/ic_launcher',
+          ),
+          iOS: DarwinNotificationDetails(
+            presentAlert: true,
+            presentBadge: true,
+            presentSound: true,
+          ),
+        ),
+      );
+
+      // Mark today as done
+      await prefs.setString(
+          StorageKeys.lastOverdueNotificationDate, todayStr);
+      debugPrint(
+          '🔔 Showed overdue notification for ${overdueTasks.length} task(s)');
+    } catch (e) {
+      debugPrint('🔔 Failed to show overdue notification: $e');
+    }
+  }
+
+  // ===========================================================================
+  // LOCALE HELPER
+  // ===========================================================================
+
+  /// Get localized strings for notifications by reading the stored locale
+  static Future<AppLocalizations> _getLocalizations() async {
+    final prefs = await SharedPreferences.getInstance();
+    final localeCode = prefs.getString(StorageKeys.locale) ?? 'en';
+    return AppLocalizations(Locale(localeCode));
   }
 }

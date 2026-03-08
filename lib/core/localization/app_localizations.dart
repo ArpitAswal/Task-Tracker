@@ -162,11 +162,23 @@ class AppLocalizations {
       'updating_task': 'Updating Task...',
       'creating_task': 'Creating Task...',
 
+      // Notification Reminders
+      'notification_task_reminder': 'Task Reminder',
+      'notification_task_due_in_1hr': 'Task "{taskTitle}" is due in 1 hour!',
+      'notification_task_due_now': 'Task Due Now',
+      'notification_task_due_now_msg': 'Task "{taskTitle}" is now due!',
+      'notification_overdue_title': 'Overdue Tasks',
+      'notification_overdue_msg': 'You have {count} overdue task(s). Complete them to stay on track!',
+
       // Settings
       'settings': 'Settings',
+      'appearance': 'Appearance',
       'theme': 'Theme',
       'language': 'Language',
       'notifications': 'Notifications',
+      'task_reminders': 'Task Reminders',
+      'reminders_on_desc': 'Get reminded 1 hour before tasks are due',
+      'reminders_off_desc': 'No task reminder notifications',
       'profile': 'Profile',
 
       // Theme Options
@@ -411,11 +423,23 @@ class AppLocalizations {
       'creating_task': 'कार्य बनाया जा रहा है...',
       'in_completing_task': 'कार्य पूरा नहीं हुआ...',
 
+      // Notification Reminders
+      'notification_task_reminder': 'कार्य अनुस्मारक',
+      'notification_task_due_in_1hr': 'कार्य "{taskTitle}" 1 घंटे में देय है!',
+      'notification_task_due_now': 'कार्य अभी देय है',
+      'notification_task_due_now_msg': 'कार्य "{taskTitle}" अभी देय है!',
+      'notification_overdue_title': 'विलंबित कार्य',
+      'notification_overdue_msg': 'आपके पास {count} विलंबित कार्य हैं। उन्हें पूरा करें!',
+
       // Settings
       'settings': 'सेटिंग्स',
+      'appearance': 'दिखावट',
       'theme': 'थीम',
       'language': 'भाषा',
       'notifications': 'सूचनाएं',
+      'task_reminders': 'कार्य अनुस्मारक',
+      'reminders_on_desc': 'कार्य समय से 1 घंटे पहले अनुस्मारक प्राप्त करें',
+      'reminders_off_desc': 'कोई कार्य अनुस्मारक सूचना नहीं',
       'profile': 'प्रोफ़ाइल',
 
       // Theme Options

@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
@@ -410,7 +412,10 @@ class _DatePickerTile extends StatelessWidget {
           firstDate: DateTime.now(),
           lastDate: DateTime.now().add(const Duration(days: 365)),
         );
-        if (picked != null) onPick(picked);
+        if (picked != null) {
+          DateTime now = DateTime.now();
+          onPick(picked.copyWith(hour: now.hour, minute: now.minute));
+        }
       },
     );
   }

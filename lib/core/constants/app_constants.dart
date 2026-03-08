@@ -62,6 +62,7 @@ class StorageKeys {
   static const String themeMode = 'themeMode';
   static const String locale = 'locale';
   static const String notificationEnabled = 'notificationEnabled';
+  static const String lastOverdueNotificationDate = 'lastOverdueNotificationDate';
   static const String reminderFrequency = 'reminderFrequency';
   static const String onboardingCompleted = 'onboardingCompleted';
 
