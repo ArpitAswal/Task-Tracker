@@ -33,6 +33,7 @@ class _AddTaskSheetState extends State<AddTaskSheet> {
   late final TextEditingController _descriptionController;
 
   late DateTime _selectedDate;
+  late DateTime _reminderAt;
   late TaskPriority _priority;
   late TaskCategory _category;
 
@@ -44,7 +45,12 @@ class _AddTaskSheetState extends State<AddTaskSheet> {
     final task = widget.task;
     _titleController = TextEditingController(text: task?.title);
     _descriptionController = TextEditingController(text: task?.description);
-    _selectedDate = task?.endDate ?? DateTime.now();
+
+    final now = DateTime.now();
+    _selectedDate = task?.endDate ?? now.add(const Duration(days: 1));
+    _reminderAt =
+        task?.reminderAt ?? _selectedDate.subtract(const Duration(hours: 1));
+
     _priority = task?.priority ?? TaskPriority.medium;
     _category = task?.category ?? TaskCategory.other;
 
@@ -77,6 +83,24 @@ class _AddTaskSheetState extends State<AddTaskSheet> {
       widget.provider.setDescriptionError("");
     }
 
+    final now = DateTime.now();
+    if (_selectedDate.isBefore(now)) {
+      context.showErrorToast(
+        l10n?.translate('date_passed') ?? "Selected date & time are already passed",
+      );
+      valid = false;
+    } else if (_reminderAt.isBefore(now)) {
+      context.showErrorToast(
+        l10n?.translate('reminder_passed') ?? "Reminder time passed",
+      );
+      valid = false;
+    } else if (_selectedDate.difference(_reminderAt).inMinutes < 10) {
+      context.showErrorToast(
+        l10n?.translate('reminder_gap') ?? "Reminder time must be at least 10 minutes before task finish time",
+      );
+      valid = false;
+    }
+
     return valid;
   }
 
@@ -95,6 +119,7 @@ class _AddTaskSheetState extends State<AddTaskSheet> {
         title: title,
         description: description,
         endDate: _selectedDate,
+        reminderAt: _reminderAt,
         priority: _priority,
         category: _category,
       );
@@ -105,6 +130,7 @@ class _AddTaskSheetState extends State<AddTaskSheet> {
         title: title,
         description: description,
         endDate: _selectedDate,
+        reminderAt: _reminderAt,
         priority: _priority,
         category: _category,
       );
@@ -185,8 +211,45 @@ class _AddTaskSheetState extends State<AddTaskSheet> {
 
             _DatePickerTile(
               date: _selectedDate,
-              onPick: (d) => setState(() => _selectedDate = d),
+              onPick: (d) => setState(() {
+                _selectedDate = d;
+                _reminderAt = _selectedDate.subtract(const Duration(hours: 1));
+              }),
             ),
+
+            if (_selectedDate.year == DateTime.now().year &&
+                _selectedDate.month == DateTime.now().month &&
+                _selectedDate.day == DateTime.now().day) ...[
+              const SizedBox(height: 8),
+              _TimePickerTile(
+                title: l10n?.translate('finish_time') ?? 'End Of Task Time',
+                time: TimeOfDay.fromDateTime(_selectedDate),
+                onPick: (t) => setState(() {
+                  _selectedDate = DateTime(
+                    _selectedDate.year,
+                    _selectedDate.month,
+                    _selectedDate.day,
+                    t.hour,
+                    t.minute,
+                  );
+                }),
+              ),
+              const SizedBox(height: 8),
+              _TimePickerTile(
+                title:
+                    l10n?.translate('reminder_time') ?? 'RTask Reminder Time',
+                time: TimeOfDay.fromDateTime(_reminderAt),
+                onPick: (t) => setState(() {
+                  _reminderAt = DateTime(
+                    _selectedDate.year,
+                    _selectedDate.month,
+                    _selectedDate.day,
+                    t.hour,
+                    t.minute,
+                  );
+                }),
+              ),
+            ],
 
             const SizedBox(height: 12),
 
@@ -415,6 +478,39 @@ class _DatePickerTile extends StatelessWidget {
         if (picked != null) {
           DateTime now = DateTime.now();
           onPick(picked.copyWith(hour: now.hour, minute: now.minute));
+        }
+      },
+    );
+  }
+}
+
+class _TimePickerTile extends StatelessWidget {
+  final String title;
+  final TimeOfDay time;
+  final ValueChanged<TimeOfDay> onPick;
+
+  const _TimePickerTile({
+    required this.title,
+    required this.time,
+    required this.onPick,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return ListTile(
+      title: Text(title),
+      subtitle: Text(time.format(context)),
+      trailing: Icon(
+        Icons.access_time_filled,
+        color: Theme.of(context).primaryColor,
+      ),
+      onTap: () async {
+        final picked = await showTimePicker(
+          context: context,
+          initialTime: time,
+        );
+        if (picked != null) {
+          onPick(picked);
         }
       },
     );

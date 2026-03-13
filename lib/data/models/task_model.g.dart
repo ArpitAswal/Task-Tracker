@@ -25,7 +25,7 @@ class TaskModelAdapter extends TypeAdapter<TaskModel> {
       endDate: fields[5] as DateTime,
       isCompleted: fields[6] as bool,
       priority: fields[7] as TaskPriority,
-      reminderHour: fields[8] as int?,
+      reminderAt: fields[8] as DateTime?,
       createdAt: fields[9] as DateTime,
       updatedAt: fields[10] as DateTime?,
       completedAt: fields[11] as DateTime?,
@@ -54,7 +54,7 @@ class TaskModelAdapter extends TypeAdapter<TaskModel> {
       ..writeByte(7)
       ..write(obj.priority)
       ..writeByte(8)
-      ..write(obj.reminderHour)
+      ..write(obj.reminderAt)
       ..writeByte(9)
       ..write(obj.createdAt)
       ..writeByte(10)

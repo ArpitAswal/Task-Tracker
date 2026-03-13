@@ -178,24 +178,26 @@ class TaskProvider with ChangeNotifier {
       List<TaskModel> localTasks = [];
 
       // Fetch cloud tasks (may fail offline)
-      try {
+      // try {
         cloudTasks = await _taskRepository.getAllTasks(
           _userId!,
           fromLocal: false,
         );
-      } catch (e) {
-        debugPrint('Cloud fetch failed during init: $e');
-      }
+      // }
+      // catch (e) {
+      //   debugPrint('Cloud fetch failed during init: $e');
+      // }
 
       // Fetch local tasks
-      try {
+      // try {
         localTasks = await _taskRepository.getAllTasks(
           _userId!,
           fromLocal: true,
         );
-      } catch (e) {
-        debugPrint('Local fetch failed during init: $e');
-      }
+      // }
+      // catch (e) {
+      //   debugPrint('Local fetch failed during init: $e');
+      // }
 
       // ✨ IMPROVED SYNC LOGIC: Big to Small Sync
       if (localTasks.length > cloudTasks.length) {
@@ -332,7 +334,7 @@ class TaskProvider with ChangeNotifier {
   /// [startDate] - Task start date
   /// [endDate] - Task end date
   /// [priority] - Task priority (1-3)
-  /// [reminderHour] - Optional reminder hour (0-23)
+  /// [reminderAt] - Optional precision reminder datetime
   /// [category] - Optional category
   /// [context] - Optional context for localized errors
   ///
@@ -343,7 +345,7 @@ class TaskProvider with ChangeNotifier {
     required DateTime endDate,
     TaskPriority priority = TaskPriority.medium,
     DateTime? startDate,
-    int? reminderHour = 24,
+    DateTime? reminderAt,
     TaskCategory category = TaskCategory.other,
   }) async {
     if (_userId == null) {
@@ -364,7 +366,7 @@ class TaskProvider with ChangeNotifier {
         startDate: DateTime.now(),
         endDate: endDate,
         priority: priority,
-        reminderHour: reminderHour,
+        reminderAt: reminderAt,
         category: category,
         createdAt: DateTime.now(),
         completedAt: null,
@@ -404,7 +406,7 @@ class TaskProvider with ChangeNotifier {
   /// [startDate] - Updated start date (optional)
   /// [endDate] - Updated end date (optional)
   /// [priority] - Updated priority (optional)
-  /// [reminderHour] - Updated reminder hour (optional)
+  /// [reminderAt] - Updated reminder datetime (optional)
   /// [category] - Updated category (optional)
   /// [context] - Optional context for localized errors
   ///
@@ -543,17 +545,17 @@ class TaskProvider with ChangeNotifier {
         createdAt: task.createdAt,
         priority: task.priority,
         startDate: task.startDate,
-        reminderHour: task.reminderHour,
+        reminderAt: task.reminderAt,
         category: task.category,
         completedAt: task.isCompleted ? null : DateTime.now(),
       );
 
       await updateTask(updatedTask: _tasks[index]);
-      if (!task.isCompleted) {
-        // Was incomplete, now completed → trigger streak + cancel reminder
-        await NotificationService.cancelTaskReminder(task.id);
-        onTaskCompleted?.call();
-      }
+      // if (!task.isCompleted) {
+      //   // Was incomplete, now completed → trigger streak + cancel reminder
+      //   await NotificationService.cancelTaskReminder(task.id);
+      //   onTaskCompleted?.call();
+      // }
     }
   }
 

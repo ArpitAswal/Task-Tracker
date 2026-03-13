@@ -52,9 +52,9 @@ class TaskModel extends HiveObject {
   @HiveField(7)
   final TaskPriority priority;
 
-  /// Optional specific hour for reminder (0-23, null = no specific hour)
+  /// Optional specific time for reminder
   @HiveField(8)
-  final int? reminderHour;
+  final DateTime? reminderAt;
 
   /// Timestamp when task was created
   @HiveField(9)
@@ -82,7 +82,7 @@ class TaskModel extends HiveObject {
     required this.endDate,
     this.isCompleted = false,
     this.priority = TaskPriority.medium, // Default medium priority
-    this.reminderHour,
+    this.reminderAt,
     required this.createdAt,
     this.updatedAt,
     this.completedAt,
@@ -106,7 +106,7 @@ class TaskModel extends HiveObject {
       'endDate': Timestamp.fromDate(endDate),
       'isCompleted': isCompleted,
       'priority': priority.name,
-      'reminderHour': reminderHour,
+      'reminderAt': reminderAt != null ? Timestamp.fromDate(reminderAt!) : null,
       'createdAt': Timestamp.fromDate(createdAt),
       'updatedAt': updatedAt != null ? Timestamp.fromDate(updatedAt!) : null,
       'completedAt': completedAt != null
@@ -130,7 +130,7 @@ class TaskModel extends HiveObject {
       'endDate': endDate.toIso8601String(),
       'isCompleted': isCompleted,
       'priority': priority,
-      'reminderHour': reminderHour,
+      'reminderAt': reminderAt?.toIso8601String(),
       'createdAt': createdAt.toIso8601String(),
       'updatedAt': updatedAt?.toIso8601String(),
       'completedAt': completedAt?.toIso8601String(),
@@ -156,7 +156,9 @@ class TaskModel extends HiveObject {
               orElse: () => TaskPriority.medium,
             )
           : (json['priority'] as TaskPriority? ?? TaskPriority.medium),
-      reminderHour: json['reminderHour'] as int?,
+      reminderAt: json['reminderAt'] != null
+          ? (json['reminderAt'] as Timestamp).toDate()
+          : null,
       createdAt: (json['createdAt'] as Timestamp).toDate(),
       updatedAt: json['updatedAt'] != null
           ? (json['updatedAt'] as Timestamp).toDate()
@@ -191,7 +193,9 @@ class TaskModel extends HiveObject {
               orElse: () => TaskPriority.medium,
             )
           : (map['priority'] as TaskPriority? ?? TaskPriority.medium),
-      reminderHour: map['reminderHour'] as int?,
+      reminderAt: map['reminderAt'] != null
+          ? DateTime.parse(map['reminderAt'] as String)
+          : null,
       createdAt: DateTime.parse(map['createdAt'] as String),
       updatedAt: map['updatedAt'] != null
           ? DateTime.parse(map['updatedAt'] as String)
@@ -233,7 +237,7 @@ class TaskModel extends HiveObject {
     DateTime? endDate,
     bool? isCompleted,
     TaskPriority? priority,
-    int? reminderHour,
+    DateTime? reminderAt,
     DateTime? createdAt,
     DateTime? updatedAt,
     DateTime? completedAt,
@@ -248,7 +252,7 @@ class TaskModel extends HiveObject {
       endDate: endDate ?? this.endDate,
       isCompleted: isCompleted ?? this.isCompleted,
       priority: priority ?? this.priority,
-      reminderHour: reminderHour ?? this.reminderHour,
+      reminderAt: reminderAt ?? this.reminderAt,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       completedAt: completedAt ?? this.completedAt,
@@ -360,7 +364,7 @@ class TaskModel extends HiveObject {
   }
 
   /// Check if task has reminder set
-  bool get hasReminder => reminderHour != null;
+  bool get hasReminder => reminderAt != null;
 
   /// Get duration of task in days
   int get taskDuration {

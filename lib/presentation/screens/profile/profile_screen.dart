@@ -36,7 +36,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Future<void> _showWarningDelayed() async {
     await Future.delayed(const Duration(seconds: 1));
     if (mounted) {
-      context.showWarningToast(_authProvider.errorMessage ?? "");
+      context.showWarningToast(_authProvider.errorMessage ?? 'user-profile-error');
     }
   }
 

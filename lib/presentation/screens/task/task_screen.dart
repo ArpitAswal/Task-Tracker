@@ -65,6 +65,9 @@ class _TaskTabViewState extends State<TaskTabView> {
                 /// ✅ PENDING TASKS — NOW REACTIVE
                 Consumer<TaskProvider>(
                   builder: (_, provider, __) {
+                    if(provider.isInitialLoading) {
+                      return const Center(child: CircularProgressIndicator.adaptive());
+                    }
                     return buildTaskList(provider.pendingTasks, context, false);
                   },
                 ),
@@ -72,10 +75,13 @@ class _TaskTabViewState extends State<TaskTabView> {
                 /// ✅ COMPLETED TASKS — NOW REACTIVE
                 Consumer<TaskProvider>(
                   builder: (_, provider, __) {
+                    if(provider.isInitialLoading) {
+                      return const Center(child: CircularProgressIndicator.adaptive());
+                    }
                     return buildTaskList(
                       provider.completedTasks,
                       context,
-                      true,
+                      true
                     );
                   },
                 ),

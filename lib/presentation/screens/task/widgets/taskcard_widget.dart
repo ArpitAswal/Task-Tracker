@@ -14,7 +14,7 @@ import '../../../providers/task_provider.dart';
 
 Widget buildTaskCard(TaskModel task, BuildContext context) {
   final theme = Theme.of(context);
-  final isOverdue = task.endDate.day <= DateTime.now().day && !task.isCompleted;
+  final isOverdue = task.endDate.day <= DateTime.now().day && !task.isCompleted && task.createdAt.day != DateTime.now().day ;
   final hasDescription = (task.description?.trim().isNotEmpty ?? false);
   final priorityColor = task.priorityColor;
   final categoryColor = task.categoryColor;

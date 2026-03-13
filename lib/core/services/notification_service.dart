@@ -69,11 +69,7 @@ class NotificationService {
     debugPrint('🔔 NotificationService initialized');
   }
 
-  /// Schedule two reminder notifications for a task:
-  ///   1. One hour before the reminder time (early heads-up)
-  ///   2. At the exact reminder time
-  ///
-  /// The reminder time is calculated as [task.createdAt] + [task.reminderHour].
+  /// Schedule a reminder notification for a task at its `reminderAt` time.
   ///
   /// Skips scheduling if:
   /// - Notifications are globally disabled
@@ -85,16 +81,13 @@ class NotificationService {
 
     // Check per-task reminder
     if (!task.hasReminder) return;
-
+    
+    final reminderTime = task.reminderAt!;
     final now = DateTime.now();
+
+    if (reminderTime.isBefore(now)) return;
+
     final loc = await _getLocalizations();
-
-    // Reminder time = task end date (the due date selected by the user)
-    final exactReminderTime = task.endDate;
-
-    // 1 hour before the exact reminder time
-    final earlyReminderTime =
-        exactReminderTime.subtract(const Duration(hours: 1));
 
     const notificationDetails = NotificationDetails(
       android: AndroidNotificationDetails(
@@ -113,38 +106,54 @@ class NotificationService {
     );
 
     try {
-      // Notification 1: 1 hour before the reminder time
-      if (earlyReminderTime.isAfter(now)) {
-        final tzEarlyTime = tz.TZDateTime.from(earlyReminderTime, tz.local);
-        await _notifications.zonedSchedule(
-          task.id.hashCode,
-          loc.translate('notification_task_reminder'),
-          loc.translate('notification_task_due_in_1hr')
-              .replaceAll('{taskTitle}', task.title),
-          tzEarlyTime,
-          notificationDetails,
-          androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
-          matchDateTimeComponents: null,
-        );
-        debugPrint(
-            '🔔 Scheduled early reminder for "${task.title}" at $earlyReminderTime');
+      final tzTime = tz.TZDateTime.from(reminderTime, tz.local);
+      
+      // Calculate how much time is left between reminder and end date
+      final difference = task.endDate.difference(reminderTime);
+      String timeLeftStr;
+      
+      if (difference.inDays > 0) {
+        timeLeftStr = '${difference.inDays} ${loc.translate('days_streak')}';
+      } else if (difference.inHours > 0) {
+        final remainingMins = difference.inMinutes % 60;
+        if (remainingMins > 0) {
+          timeLeftStr = '${difference.inHours}hr ${remainingMins}m';
+        } else {
+          timeLeftStr = '${difference.inHours} hour(s)';
+        }
+      } else {
+        timeLeftStr = '${difference.inMinutes} minute(s)';
       }
 
-      // Notification 2: At the exact reminder time
-      if (exactReminderTime.isAfter(now)) {
-        final tzExactTime = tz.TZDateTime.from(exactReminderTime, tz.local);
+      await _notifications.zonedSchedule(
+        task.id.hashCode,
+        loc.translate('notification_task_reminder'),
+        loc.translate('notification_task_due_in_time')
+            .replaceAll('{taskTitle}', task.title)
+            .replaceAll('{timeLeft}', timeLeftStr),
+        tzTime,
+        notificationDetails,
+        androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+        matchDateTimeComponents: null,
+      );
+      debugPrint(
+          '🔔 Scheduled reminder for "${task.title}" at $reminderTime');
+          
+      // Schedule end time notification
+      if (task.endDate.isAfter(now)) {
+        final tzEndTime = tz.TZDateTime.from(task.endDate, tz.local);
         await _notifications.zonedSchedule(
           task.id.hashCode + 1,
-          loc.translate('notification_task_due_now'),
-          loc.translate('notification_task_due_now_msg')
+          loc.translate('notification_task_ended'),
+          loc.translate('notification_task_ended_msg')
               .replaceAll('{taskTitle}', task.title),
-          tzExactTime,
+          tzEndTime,
           notificationDetails,
           androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
           matchDateTimeComponents: null,
         );
         debugPrint(
-            '🔔 Scheduled exact reminder for "${task.title}" at $exactReminderTime');
+            '🔔 Scheduled end timeframe notification for "${task.title}" at ${task.endDate}');
       }
     } catch (e) {
       debugPrint('🔔 Failed to schedule reminder: $e');

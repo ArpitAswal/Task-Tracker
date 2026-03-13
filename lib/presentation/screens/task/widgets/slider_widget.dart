@@ -48,9 +48,9 @@ class MySlider extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 18.0),
       alignment: Alignment.centerLeft,
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [Colors.blue, Colors.purple],
+          colors: [Theme.of(context).primaryColor, Theme.of(context).scaffoldBackgroundColor],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),

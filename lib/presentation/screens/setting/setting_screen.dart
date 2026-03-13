@@ -42,16 +42,6 @@ class _SettingScreenState extends State<SettingScreen> {
     final theme = Theme.of(context);
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(loc?.translate('settings') ?? 'Settings'),
-        actions: [
-          IconButton(
-            onPressed: () => _handleLogout(context),
-            icon: const Icon(Icons.logout),
-            tooltip: loc?.translate('logout') ?? 'Logout',
-          ),
-        ],
-      ),
       body: ListView(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         children: [
