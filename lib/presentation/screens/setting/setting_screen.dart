@@ -68,8 +68,8 @@ class _SettingScreenState extends State<SettingScreen> {
                   themeProvider.isDarkMode
                       ? Icons.dark_mode_rounded
                       : themeProvider.isLightMode
-                          ? Icons.light_mode_rounded
-                          : Icons.brightness_auto_rounded,
+                      ? Icons.light_mode_rounded
+                      : Icons.brightness_auto_rounded,
                   color: theme.colorScheme.primary,
                 ),
                 title: Text(
@@ -87,20 +87,17 @@ class _SettingScreenState extends State<SettingScreen> {
                     ButtonSegment(
                       value: ThemeMode.system,
                       icon: const Icon(Icons.brightness_auto, size: 18),
-                      tooltip:
-                          loc?.translate('system_theme') ?? 'System',
+                      tooltip: loc?.translate('system_theme') ?? 'System',
                     ),
                     ButtonSegment(
                       value: ThemeMode.light,
                       icon: const Icon(Icons.light_mode, size: 18),
-                      tooltip:
-                          loc?.translate('light_theme') ?? 'Light',
+                      tooltip: loc?.translate('light_theme') ?? 'Light',
                     ),
                     ButtonSegment(
                       value: ThemeMode.dark,
                       icon: const Icon(Icons.dark_mode, size: 18),
-                      tooltip:
-                          loc?.translate('dark_theme') ?? 'Dark',
+                      tooltip: loc?.translate('dark_theme') ?? 'Dark',
                     ),
                   ],
                   selected: {themeProvider.themeMode},
@@ -153,9 +150,9 @@ class _SettingScreenState extends State<SettingScreen> {
                 subtitle: Text(
                   _notificationsEnabled
                       ? (loc?.translate('reminders_on_desc') ??
-                          'Get reminded 1 hour before tasks are due')
+                            'Get reminded 1 hour before tasks are due')
                       : (loc?.translate('reminders_off_desc') ??
-                          'No task reminder notifications'),
+                            'No task reminder notifications'),
                   style: theme.textTheme.bodySmall?.copyWith(
                     color: theme.colorScheme.onSurfaceVariant,
                   ),
@@ -170,9 +167,83 @@ class _SettingScreenState extends State<SettingScreen> {
               ),
             ),
           ),
+
+          const SizedBox(height: 24),
+
+          // ============================
+          // DATA MANAGEMENT SECTION
+          // ============================
+          _SectionHeader(
+            title: loc?.translate('data_management') ?? 'Data Management',
+            icon: Icons.storage_rounded,
+          ),
+          const SizedBox(height: 8),
+          Card(
+            elevation: 0,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+              side: BorderSide(
+                color: theme.colorScheme.error.withValues(alpha: 0.3),
+              ),
+            ),
+            child: ListTile(
+              leading: Icon(
+                Icons.delete_forever_rounded,
+                color: theme.colorScheme.error,
+              ),
+              title: Text(
+                loc?.translate('delete_all_tasks') ?? 'Delete All Tasks',
+                style: theme.textTheme.titleMedium?.copyWith(
+                  color: theme.colorScheme.error,
+                ),
+              ),
+              onTap: () => _handleDeleteAllTasks(context, loc),
+            ),
+          ),
         ],
       ),
     );
+  }
+
+  Future<void> _handleDeleteAllTasks(
+    BuildContext context,
+    AppLocalizations? loc,
+  ) async {
+    final theme = Theme.of(context);
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(loc?.translate('delete_all_tasks') ?? 'Delete All Tasks'),
+        content: Text(
+          loc?.translate('delete_all_tasks_confirm') ??
+              'Are you sure you want to delete all tasks? This action cannot be undone.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text(loc?.translate('cancel') ?? 'Cancel'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: theme.colorScheme.error,
+            ),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text(
+              loc?.translate('delete') ?? 'Delete',
+              style: TextStyle(color: theme.colorScheme.onError),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true && context.mounted) {
+      final taskProvider = context.read<TaskProvider>();
+      final authProvider = context.read<AuthProvider>();
+      await taskProvider.deleteAllTasks();
+      // Add a method to reset streak in authProvider when tasks are cleared
+      await authProvider.resetStreak();
+    }
   }
 
   String _getThemeLabel(ThemeMode mode, AppLocalizations? loc) {

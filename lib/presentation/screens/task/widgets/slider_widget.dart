@@ -12,10 +12,11 @@ class MySlider extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context);
-    final List<IconData> icons = [Icons.home, Icons.person, Icons.settings];
+    final List<IconData> icons = [Icons.home, Icons.person, Icons.leaderboard, Icons.settings];
     final List<String> texts = [
       loc?.translate('home') ?? 'Home',
       loc?.translate('profile_label') ?? 'Profile',
+      loc?.translate('leaderboard') ?? 'Leaderboard',
       loc?.translate('settings') ?? 'Settings',
     ];
 

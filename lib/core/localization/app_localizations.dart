@@ -178,6 +178,11 @@ class AppLocalizations {
       'notification_overdue_title': 'Overdue Tasks',
       'notification_overdue_msg': 'You have {count} overdue task(s). Complete them to stay on track!',
 
+      // Leaderboard
+      'leaderboard': 'Leaderboard',
+      'error_loading_leaderboard': 'Error loading leaderboard',
+      'no_users_found': 'No users found.',
+
       // Settings
       'settings': 'Settings',
       'appearance': 'Appearance',
@@ -188,6 +193,9 @@ class AppLocalizations {
       'reminders_on_desc': 'Get reminded 1 hour before tasks are due',
       'reminders_off_desc': 'No task reminder notifications',
       'profile': 'Profile',
+      'data_management': 'Data Management',
+      'delete_all_tasks': 'Delete All Tasks',
+      'delete_all_tasks_confirm': 'Are you sure you want to delete all tasks? This action cannot be undone.',
 
       // Theme Options
       'light_theme': 'Light',
@@ -441,6 +449,11 @@ class AppLocalizations {
       'notification_overdue_title': 'विलंबित कार्य',
       'notification_overdue_msg': 'आपके पास {count} विलंबित कार्य हैं। उन्हें पूरा करें!',
 
+      // Leaderboard
+      'leaderboard': 'लीडरबोर्ड',
+      'error_loading_leaderboard': 'लीडरबोर्ड लोड करने में त्रुटि',
+      'no_users_found': 'कोई उपयोगकर्ता नहीं मिला.',
+
       // Settings
       'settings': 'सेटिंग्स',
       'appearance': 'दिखावट',
@@ -451,6 +464,9 @@ class AppLocalizations {
       'reminders_on_desc': 'कार्य समय से 1 घंटे पहले अनुस्मारक प्राप्त करें',
       'reminders_off_desc': 'कोई कार्य अनुस्मारक सूचना नहीं',
       'profile': 'प्रोफ़ाइल',
+      'data_management': 'डेटा प्रबंधन',
+      'delete_all_tasks': 'सभी कार्य हटाएं',
+      'delete_all_tasks_confirm': 'क्या आप वाकई सभी कार्य हटाना चाहते हैं? यह क्रिया वापस नहीं ली जा सकती।',
 
       // Theme Options
       'light_theme': 'लाइट',

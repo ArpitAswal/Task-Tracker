@@ -25,6 +25,9 @@ class TaskProvider with ChangeNotifier {
   /// Callback invoked when a task is completed (for streak updates)
   VoidCallback? onTaskCompleted;
 
+  /// Callback invoked when a task is marked incomplete (for streak reversal)
+  void Function(bool hasOtherCompletedTasksToday)? onTaskIncomplete;
+
   /// Constructor with dependency injection
   TaskProvider({TaskRepository? taskRepository})
     : _taskRepository = taskRepository ?? TaskRepository();
@@ -179,10 +182,10 @@ class TaskProvider with ChangeNotifier {
 
       // Fetch cloud tasks (may fail offline)
       // try {
-        cloudTasks = await _taskRepository.getAllTasks(
-          _userId!,
-          fromLocal: false,
-        );
+      cloudTasks = await _taskRepository.getAllTasks(
+        _userId!,
+        fromLocal: false,
+      );
       // }
       // catch (e) {
       //   debugPrint('Cloud fetch failed during init: $e');
@@ -190,10 +193,7 @@ class TaskProvider with ChangeNotifier {
 
       // Fetch local tasks
       // try {
-        localTasks = await _taskRepository.getAllTasks(
-          _userId!,
-          fromLocal: true,
-        );
+      localTasks = await _taskRepository.getAllTasks(_userId!, fromLocal: true);
       // }
       // catch (e) {
       //   debugPrint('Local fetch failed during init: $e');
@@ -417,14 +417,32 @@ class TaskProvider with ChangeNotifier {
     notifyListeners();
 
     try {
+      // Find old task to check if completion status changed
+      final oldTaskIndex = _tasks.indexWhere((t) => t.id == updatedTask.id);
+      final oldTask = oldTaskIndex != -1 ? _tasks[oldTaskIndex] : updatedTask;
+      final bool newlyCompleted = !oldTask.isCompleted && updatedTask.isCompleted;
+      final bool newlyIncomplete = oldTask.isCompleted && !updatedTask.isCompleted;
+
       // Save updated task
       await _taskRepository.updateTask(updatedTask);
 
-      // Update notification: schedule or cancel based on reminder setting
-      if (updatedTask.hasReminder && !updatedTask.isCompleted) {
-        await NotificationService.scheduleTaskReminder(updatedTask);
-      } else {
+      // Handle Task Status Toggles
+      if (newlyCompleted) {
+        await _taskRepository.completedTaskCount(updatedTask.userId, true);
         await NotificationService.cancelTaskReminder(updatedTask.id);
+        onTaskCompleted?.call();
+      } else if (newlyIncomplete) {
+        await _taskRepository.completedTaskCount(updatedTask.userId, false);
+        if (updatedTask.hasReminder) {
+          await NotificationService.scheduleTaskReminder(updatedTask);
+        }
+      } else {
+        // Status didn't change, just update the reminder if it has one
+        if (updatedTask.hasReminder && !updatedTask.isCompleted) {
+          await NotificationService.scheduleTaskReminder(updatedTask);
+        } else {
+          await NotificationService.cancelTaskReminder(updatedTask.id);
+        }
       }
 
       // Reload tasks
@@ -436,61 +454,6 @@ class TaskProvider with ChangeNotifier {
     } finally {
       _setLoading(false);
       notifyListeners();
-    }
-  }
-
-  /// Mark task as completed
-  ///
-  /// [taskId] - Task ID to mark as completed
-  /// [context] - Optional context for localized errors
-  ///
-  /// Returns: true if successful, false otherwise
-  Future<bool> markTaskAsCompleted(
-    String taskId, {
-    BuildContext? context,
-  }) async {
-    _setLoading(true);
-    _clearError();
-
-    try {
-      await _taskRepository.markTaskAsCompleted(taskId);
-
-      // Cancel reminder — task is done, no need for notification
-      await NotificationService.cancelTaskReminder(taskId);
-
-      await loadTasks();
-      onTaskCompleted?.call(); // Trigger streak update
-      _setLoading(false);
-      return true;
-    } catch (e) {
-      _setError(e.toString());
-      _setLoading(false);
-      return false;
-    }
-  }
-
-  /// Mark task as incomplete
-  ///
-  /// [taskId] - Task ID to mark as incomplete
-  /// [context] - Optional context for localized errors
-  ///
-  /// Returns: true if successful, false otherwise
-  Future<bool> markTaskAsIncomplete(
-    String taskId, {
-    BuildContext? context,
-  }) async {
-    _setLoading(true);
-    _clearError();
-
-    try {
-      await _taskRepository.markTaskAsIncomplete(taskId);
-      await loadTasks();
-      _setLoading(false);
-      return true;
-    } catch (e) {
-      _setError(e.toString());
-      _setLoading(false);
-      return false;
     }
   }
 
@@ -535,7 +498,7 @@ class TaskProvider with ChangeNotifier {
     final index = _tasks.indexWhere((task) => task.id == taskId);
     if (index != -1) {
       final task = _tasks[index];
-      _tasks[index] = TaskModel(
+      final toggledTask = TaskModel(
         id: task.id,
         title: task.title,
         description: task.description,
@@ -550,12 +513,22 @@ class TaskProvider with ChangeNotifier {
         completedAt: task.isCompleted ? null : DateTime.now(),
       );
 
-      await updateTask(updatedTask: _tasks[index]);
-      // if (!task.isCompleted) {
-      //   // Was incomplete, now completed → trigger streak + cancel reminder
-      //   await NotificationService.cancelTaskReminder(task.id);
-      //   onTaskCompleted?.call();
-      // }
+      await updateTask(updatedTask: toggledTask);
+      
+      // If we just marked a task incomplete, check if we need to reverse the streak
+      if (!toggledTask.isCompleted && task.completedAt != null) {
+        final now = DateTime.now();
+        if (task.completedAt!.year == now.year && task.completedAt!.month == now.month && task.completedAt!.day == now.day) {
+          // It was completed today, we just marked it incomplete. Are there OTHER tasks completed today?
+          final completedToday = completedTasks.where((t) => t.id != taskId && t.completedAt != null && t.completedAt!.year == now.year && t.completedAt!.month == now.month && t.completedAt!.day == now.day).toList();
+          
+          if (completedToday.isEmpty) {
+            onTaskIncomplete?.call(false);
+          } else {
+            onTaskIncomplete?.call(true);
+          }
+        }
+      }
     }
   }
 

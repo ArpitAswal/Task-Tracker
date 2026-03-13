@@ -269,4 +269,15 @@ class AuthRepository {
   Future<bool> isLoggedIn() async {
     return _storageService.readBool(StorageKeys.isLoggedIn) ?? false;
   }
+
+  /// Get a stream of all users ordered by completedTasksCount (descending)
+  Stream<List<UserModel>> getAllUsersStream() {
+    return _firestore
+        .collection(FirebaseCollections.users)
+        .orderBy('completedTasksCount', descending: true)
+        .snapshots()
+        .map((snapshot) {
+      return snapshot.docs.map((doc) => UserModel.fromFirestore(doc)).toList();
+    });
+  }
 }

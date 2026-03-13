@@ -82,6 +82,10 @@ class UserModel extends HiveObject {
   @HiveField(16)
   final DateTime? updatedAt;
 
+  /// Total number of completed tasks for the leaderboard
+  @HiveField(17)
+  final int completedTasksCount;
+
   /// Constructor with required and optional fields
   UserModel({
     required this.uid,
@@ -101,6 +105,7 @@ class UserModel extends HiveObject {
     this.longestStreak = 0,
     this.lastActiveDate,
     this.updatedAt,
+    this.completedTasksCount = 0,
   });
 
   // ============================================================================
@@ -133,6 +138,7 @@ class UserModel extends HiveObject {
           ? Timestamp.fromDate(lastActiveDate!)
           : null,
       'updatedAt': Timestamp.fromDate(createdAt),
+      'completedTasksCount': completedTasksCount,
     };
   }
 
@@ -159,6 +165,7 @@ class UserModel extends HiveObject {
       'longestStreak': longestStreak,
       'lastActiveDate': lastActiveDate?.toIso8601String(),
       'updatedAt': updatedAt?.toIso8601String(),
+      'completedTasksCount': completedTasksCount,
     };
   }
 
@@ -192,6 +199,7 @@ class UserModel extends HiveObject {
       updatedAt: json['updatedAt'] != null
           ? (json['updatedAt'] as Timestamp).toDate()
           : null,
+      completedTasksCount: json['completedTasksCount'] as int? ?? 0,
     );
   }
 
@@ -223,6 +231,7 @@ class UserModel extends HiveObject {
       updatedAt: map['updatedAt'] != null
           ? DateTime.parse(map['updatedAt'] as String)
           : null,
+      completedTasksCount: map['completedTasksCount'] as int? ?? 0,
     );
   }
 
@@ -260,6 +269,7 @@ class UserModel extends HiveObject {
     int? longestStreak,
     DateTime? lastActiveDate,
     DateTime? updatedAt,
+    int? completedTasksCount,
   }) {
     return UserModel(
       uid: uid ?? this.uid,
@@ -279,6 +289,7 @@ class UserModel extends HiveObject {
       longestStreak: longestStreak ?? this.longestStreak,
       lastActiveDate: lastActiveDate ?? this.lastActiveDate,
       updatedAt: updatedAt ?? this.updatedAt,
+      completedTasksCount: completedTasksCount ?? this.completedTasksCount,
     );
   }
 

@@ -55,19 +55,6 @@ class AppColors {
   static const Color longestStreak = Color(0xFFFFD700);
   static const Color longestStreakDark = Color(0xFFFFA500);
 
-  // Gradient Colors
-  static const LinearGradient primaryGradient = LinearGradient(
-    colors: [primaryLightColor, secondaryLightColor],
-    begin: Alignment.topLeft,
-    end: Alignment.bottomRight,
-  );
-
-  static const LinearGradient accentGradient = LinearGradient(
-    colors: [accentLightColor, secondaryLightColor],
-    begin: Alignment.topLeft,
-    end: Alignment.bottomRight,
-  );
-
   // Shadow Colors
   static Color lightShadow = Colors.black.withOpacity(0.1);
   static Color darkShadow = Colors.black.withOpacity(0.3);

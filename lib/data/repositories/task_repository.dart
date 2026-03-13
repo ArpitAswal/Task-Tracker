@@ -270,48 +270,6 @@ class TaskRepository {
     return updatedTask;
   }
 
-  /// Mark task as completed
-  ///
-  /// [taskId] - Task ID to mark as completed
-  /// [context] - Optional context for localized errors
-  ///
-  /// Returns: Updated task
-  Future<TaskModel> markTaskAsCompleted(String taskId) async {
-    final task = await getTaskById(taskId);
-    if (task == null) {
-      throw Exception('Task not found');
-    }
-
-    final completedTask = task.copyWith(
-      isCompleted: true,
-      completedAt: DateTime.now(),
-      updatedAt: DateTime.now(),
-    );
-
-    return await updateTask(completedTask);
-  }
-
-  /// Mark task as incomplete
-  ///
-  /// [taskId] - Task ID to mark as incomplete
-  /// [context] - Optional context for localized errors
-  ///
-  /// Returns: Updated task
-  Future<TaskModel> markTaskAsIncomplete(String taskId) async {
-    final task = await getTaskById(taskId);
-    if (task == null) {
-      throw Exception('Task not found');
-    }
-
-    final incompleteTask = task.copyWith(
-      isCompleted: false,
-      completedAt: null,
-      updatedAt: DateTime.now(),
-    );
-
-    return await updateTask(incompleteTask);
-  }
-
   // ============================================================================
   // DELETE OPERATIONS
   // ============================================================================
@@ -457,5 +415,24 @@ class TaskRepository {
       'pending': pending,
       'overdue': overdue,
     };
+  }
+
+  // ============================================================================
+  // LEADERBOARD METHODS
+  // ============================================================================
+
+  /// Increment the completed tasks count for a specific user
+  Future<void> completedTaskCount(String uid, bool isInc) async {
+    try {
+      await _firestore
+          .collection(FirebaseCollections.users)
+          .doc(uid)
+          .update({
+        'completedTasksCount': (isInc) ? FieldValue.increment(1) : FieldValue.increment(-1),
+      });
+    } catch (e) {
+      debugPrint('Failed to increment completed tasks: $e');
+      // If doc not found, we don't crash, it might be an older user structure
+    }
   }
 }

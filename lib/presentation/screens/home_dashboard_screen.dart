@@ -8,6 +8,7 @@ import 'package:task_tracker/presentation/screens/setting/setting_screen.dart';
 import 'package:task_tracker/presentation/screens/task/task_screen.dart';
 import 'package:task_tracker/presentation/screens/task/widgets/slider_widget.dart';
 import 'package:task_tracker/presentation/screens/task/widgets/task_popup_widget.dart';
+import 'package:task_tracker/presentation/screens/leaderboard/leaderboard_screen.dart';
 
 import '../providers/auth_provider.dart';
 import '../providers/task_provider.dart';
@@ -53,6 +54,11 @@ class _HomeDashboardViewState extends State<HomeDashboardView>
     // Wire streak callback: when a task is completed, update the user's streak
     _taskProvider.onTaskCompleted = () {
       _authProvider.updateStreak();
+    };
+    
+    // Wire streak callback: reverse streak if no other tasks remain completed today
+    _taskProvider.onTaskIncomplete = (hasOtherTasks) {
+      _authProvider.decrementStreakIfNoOtherTasksToday(hasOtherTasks);
     };
   }
 
@@ -163,6 +169,8 @@ class _HomeDashboardViewState extends State<HomeDashboardView>
       case 1:
         return const ProfileScreen();
       case 2:
+        return const LeaderboardScreen();
+      case 3:
         return const SettingScreen();
       default:
         return const SizedBox();
@@ -176,6 +184,8 @@ class _HomeDashboardViewState extends State<HomeDashboardView>
       case 1:
         return localizations?.profileScreen ?? "User Profile";
       case 2:
+        return localizations?.translate('leaderboard') ?? "Leaderboard";
+      case 3:
         return localizations?.settingScreen ?? "App Settings";
       default:
         return localizations?.defaultScreen ?? "Invalid Screen";

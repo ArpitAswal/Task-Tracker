@@ -34,13 +34,14 @@ class UserModelAdapter extends TypeAdapter<UserModel> {
       longestStreak: fields[14] as int,
       lastActiveDate: fields[15] as DateTime?,
       updatedAt: fields[16] as DateTime?,
+      completedTasksCount: fields[17] as int,
     );
   }
 
   @override
   void write(BinaryWriter writer, UserModel obj) {
     writer
-      ..writeByte(17)
+      ..writeByte(18)
       ..writeByte(0)
       ..write(obj.uid)
       ..writeByte(1)
@@ -74,7 +75,9 @@ class UserModelAdapter extends TypeAdapter<UserModel> {
       ..writeByte(15)
       ..write(obj.lastActiveDate)
       ..writeByte(16)
-      ..write(obj.updatedAt);
+      ..write(obj.updatedAt)
+      ..writeByte(17)
+      ..write(obj.completedTasksCount);
   }
 
   @override

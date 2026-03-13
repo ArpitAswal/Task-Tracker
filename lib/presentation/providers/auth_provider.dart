@@ -89,6 +89,15 @@ class AuthProvider with ChangeNotifier {
     );
   }
 
+  // ============================================================================
+  // LEADERBOARD METHODS
+  // ============================================================================
+
+  /// Stream of all users used for the realtime leaderboard
+  Stream<List<UserModel>> getAllUsersStream() {
+    return _authRepository.getAllUsersStream();
+  }
+
   // Login
   Future<bool> login({
     required String email,
@@ -303,7 +312,7 @@ class AuthProvider with ChangeNotifier {
         data: {
           'currentStreak': newStreak,
           'longestStreak': newLongest,
-          'lastActiveDate': today.toIso8601String(),
+          'lastActiveDate': today,
         },
       );
 
@@ -315,6 +324,69 @@ class AuthProvider with ChangeNotifier {
       notifyListeners();
     } catch (e) {
       debugPrint('Failed to update streak: $e');
+    }
+  }
+
+  /// Reset streak to 0 (called when user deletes all tasks)
+  Future<void> resetStreak() async {
+    if (_userData == null) return;
+
+    try {
+      await _authRepository.updateUserProfileData(
+        uid: _userData!.uid,
+        data: {
+          'currentStreak': 0,
+          'lastActiveDate': null,
+        },
+      );
+
+      _userData = _userData!.copyWith(
+        currentStreak: 0,
+        lastActiveDate: null,
+      );
+      notifyListeners();
+    } catch (e) {
+      debugPrint('Failed to reset streak: $e');
+    }
+  }
+
+  /// Decrement streak by 1 if the very last active task for today is marked incomplete
+  Future<void> decrementStreakIfNoOtherTasksToday(bool hasOtherCompletedTasksToday) async {
+    if (_userData == null) return;
+    
+    // If the user still has other tasks completed today, their streak for today remains active.
+    if (hasOtherCompletedTasksToday) return;
+
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    
+    if (_userData!.lastActiveDate != null && 
+        _userData!.lastActiveDate!.year == today.year && 
+        _userData!.lastActiveDate!.month == today.month && 
+        _userData!.lastActiveDate!.day == today.day) {
+        
+      // They just reversed the only task completed today. We decrement currentStreak by 1 
+      // and set lastActiveDate to yesterday (meaning they maintained it until yesterday).
+      int newStreak = _userData!.currentStreak > 0 ? _userData!.currentStreak - 1 : 0;
+      DateTime? newLastActiveDate = newStreak > 0 ? today.subtract(const Duration(days: 1)) : null;
+
+      try {
+        await _authRepository.updateUserProfileData(
+          uid: _userData!.uid,
+          data: {
+            'currentStreak': newStreak,
+            'lastActiveDate': newLastActiveDate,
+          },
+        );
+
+        _userData = _userData!.copyWith(
+          currentStreak: newStreak,
+          lastActiveDate: newLastActiveDate,
+        );
+        notifyListeners();
+      } catch (e) {
+        debugPrint('Failed to decrement streak: $e');
+      }
     }
   }
 
