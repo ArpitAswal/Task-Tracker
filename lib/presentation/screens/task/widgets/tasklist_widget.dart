@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:lottie/lottie.dart';
+import 'package:task_tracker/core/utils/extensions/context_extension.dart';
 import 'package:task_tracker/presentation/screens/task/widgets/taskcard_widget.dart';
 
 import '../../../../core/constants/app_constants.dart';
@@ -13,7 +14,7 @@ Widget buildTaskList(
   if (tasks.isEmpty) {
     return Center(
       child: SizedBox(
-        height: MediaQuery.of(context).size.height * 0.3,
+        height: (context.isTablet) ? (context.screenHeight * 0.5) : (context.screenHeight * 0.3),
         width: double.infinity,
         child: Lottie.asset(
           AppConstants.taskLottie,

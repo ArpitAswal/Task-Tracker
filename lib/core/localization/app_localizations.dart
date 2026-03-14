@@ -448,6 +448,8 @@ class AppLocalizations {
       'notification_task_ended_msg': '"{taskTitle}" के लिए निर्धारित समय सीमा समाप्त हो गई है',
       'notification_overdue_title': 'विलंबित कार्य',
       'notification_overdue_msg': 'आपके पास {count} विलंबित कार्य हैं। उन्हें पूरा करें!',
+      'finish_time': 'कार्य समय की समाप्ति',
+      'reminder_time': 'कार्य अनुस्मारक समय',
 
       // Leaderboard
       'leaderboard': 'लीडरबोर्ड',

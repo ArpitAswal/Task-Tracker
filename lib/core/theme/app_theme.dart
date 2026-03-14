@@ -12,13 +12,11 @@ class AppTheme {
       primary: AppColors.primaryLightColor,
       secondary: AppColors.accentLightColor,
       surface: AppColors.lightSurface,
-      background: AppColors.lightBackground,
       error: AppColors.error,
       onPrimary: AppColors.black,
       onSecondary: AppColors.white,
       onSurface: AppColors.lightTextPrimary,
-      onBackground: AppColors.lightTextPrimary,
-      onError: AppColors.white,
+      onError: AppColors.error,
     ),
     scaffoldBackgroundColor: AppColors.lightBackground,
     appBarTheme: const AppBarTheme(
@@ -33,7 +31,7 @@ class AppTheme {
     // Input Decoration Theme
     inputDecorationTheme: InputDecorationTheme(
       filled: true,
-      fillColor: AppColors.lightSurface,
+      fillColor: AppColors.lightCardBackground,
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
@@ -60,7 +58,7 @@ class AppTheme {
       ),
       labelStyle: const TextStyle(color: AppColors.lightTextSecondary),
       hintStyle: TextStyle(
-        color: AppColors.lightTextSecondary.withOpacity(0.6),
+        color: AppColors.lightTextSecondary.withValues(alpha: 0.6),
       ),
       errorStyle: const TextStyle(color: AppColors.error, fontSize: 12),
     ),
@@ -109,13 +107,13 @@ class AppTheme {
 
     // Checkbox Theme
     checkboxTheme: CheckboxThemeData(
-      fillColor: MaterialStateProperty.resolveWith((states) {
-        if (states.contains(MaterialState.selected)) {
+      fillColor: WidgetStateProperty.resolveWith((states) {
+        if (states.contains(WidgetState.selected)) {
           return AppColors.primaryLightColor;
         }
         return AppColors.white;
       }),
-      checkColor: MaterialStateProperty.all(AppColors.white),
+      checkColor: WidgetStateProperty.all(AppColors.white),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
     ),
 
@@ -135,16 +133,13 @@ class AppTheme {
     useMaterial3: true,
     brightness: Brightness.dark,
     colorScheme: const ColorScheme.dark(
-      primary: AppColors.primaryLightColor,
-      secondary: AppColors.accentLightColor,
+      primary: AppColors.primaryDarkColor,
+      secondary: AppColors.accentDarkColor,
       surface: AppColors.darkSurface,
-      background: AppColors.darkBackground,
       error: AppColors.error,
       onPrimary: AppColors.white,
-      onSecondary: AppColors.greyLight,
-      onSurface: AppColors.darkTextPrimary,
-      onBackground: AppColors.darkTextPrimary,
-      onError: AppColors.white,
+      onSecondary: AppColors.black,
+      onError: AppColors.error,
     ),
     scaffoldBackgroundColor: AppColors.darkBackground,
     appBarTheme: const AppBarTheme(
@@ -159,7 +154,7 @@ class AppTheme {
     // Input Decoration Theme
     inputDecorationTheme: InputDecorationTheme(
       filled: true,
-      fillColor: AppColors.darkSurface,
+      fillColor: AppColors.darkCardBackground,
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
@@ -185,7 +180,9 @@ class AppTheme {
         borderSide: const BorderSide(color: AppColors.error, width: 2),
       ),
       labelStyle: const TextStyle(color: AppColors.darkTextSecondary),
-      hintStyle: TextStyle(color: AppColors.darkTextSecondary.withOpacity(0.6)),
+      hintStyle: TextStyle(
+        color: AppColors.darkTextSecondary.withValues(alpha: 0.6),
+      ),
       errorStyle: const TextStyle(color: AppColors.error, fontSize: 12),
     ),
 
@@ -219,7 +216,7 @@ class AppTheme {
       style: TextButton.styleFrom(
         foregroundColor: AppColors.darkTextBtnColor,
         textStyle: AppTextStyles.lightTextTheme.titleMedium,
-        padding: EdgeInsets.zero
+        padding: EdgeInsets.zero,
       ),
     ),
 
@@ -233,13 +230,13 @@ class AppTheme {
 
     // Checkbox Theme
     checkboxTheme: CheckboxThemeData(
-      fillColor: MaterialStateProperty.resolveWith((states) {
-        if (states.contains(MaterialState.selected)) {
+      fillColor: WidgetStateProperty.resolveWith((states) {
+        if (states.contains(WidgetState.selected)) {
           return AppColors.primaryLightColor;
         }
         return AppColors.darkSurface;
       }),
-      checkColor: MaterialStateProperty.all(AppColors.black),
+      checkColor: WidgetStateProperty.all(AppColors.black),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
     ),
 

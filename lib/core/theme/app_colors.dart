@@ -4,18 +4,18 @@ class AppColors {
   // Light Text Colors
 
   static const Color primaryLightColor = Color(0xFF2196F3);
-  static const Color accentLightColor = Color(0xFF03A9F4);
-  static const Color secondaryLightColor = Color(0xFF03A9F4);
+  static const Color accentLightColor = Color(0xFF69C4FA);
+  static const Color secondaryLightColor = Color(0xFF121212);
 
   // Dark Text Colors
   static const Color primaryDarkColor = Color(0xFF2196F3);
-  static const Color accentDarkColor = Color(0xFF03A9F4);
-  static const Color secondaryDarkColor = Color(0xFF03A9F4);
+  static const Color accentDarkColor = Color(0xFF0F88BD);
+  static const Color secondaryDarkColor = Color(0xFFF5F5F5);
 
   // Background Colors
   static const Color lightBackground = Color(0xFFFFFFFF);
   static const Color darkBackground = Color(0xFF121212);
-  static const Color lightCardBackground = Color(0xFFF5F5F5);
+  static const Color lightCardBackground = Color(0xFFFFFFFF);
   static const Color darkCardBackground = Color(0xFF1E1E1E);
 
   // Button Colors
@@ -23,8 +23,8 @@ class AppColors {
   static const Color darkTextBtnColor = primaryDarkColor;
 
   // Surface Colors
-  static const Color lightSurface = Color(0xFFFFFFFF);
-  static const Color darkSurface = Color(0xFF1E1E1E);
+  static const Color lightSurface = Color(0xFF757575);
+  static const Color darkSurface = Color(0xFFB0B0B0);
 
   // Text Colors
   static const Color lightTextPrimary = Color(0xFF212121);
@@ -55,15 +55,7 @@ class AppColors {
   static const Color longestStreak = Color(0xFFFFD700);
   static const Color longestStreakDark = Color(0xFFFFA500);
 
-  // Shadow Colors
-  static Color lightShadow = Colors.black.withOpacity(0.1);
-  static Color darkShadow = Colors.black.withOpacity(0.3);
-
   // Border Colors
   static const Color lightBorder = Color(0xFFE0E0E0);
   static const Color darkBorder = Color(0xFF424242);
-
-  // Disabled Colors
-  static Color disabledLight = Colors.grey.withOpacity(0.3);
-  static Color disabledDark = Colors.grey.withOpacity(0.2);
 }

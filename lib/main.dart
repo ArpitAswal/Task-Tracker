@@ -97,7 +97,25 @@ class MyApp extends StatelessWidget {
             // 🔥 builder wraps the entire Navigator tree.
             //  This makes GlobalEffectListener available everywhere.
             builder: (context, child) {
-              return GlobalEffectListener(child: child!);
+              // Calculate responsive text scale factor
+              final mediaQueryData = MediaQuery.of(context);
+              final screenWidth = mediaQueryData.size.width;
+              double textScaleFactor = 1.0;
+
+              if (screenWidth >= 600) {
+                // Tablet portrait or landscape
+                textScaleFactor = 1.75;
+              } else if (screenWidth <= 360) {
+                // Small phones
+                textScaleFactor = 0.9;
+              }
+
+              return MediaQuery(
+                data: mediaQueryData.copyWith(
+                  textScaler: TextScaler.linear(textScaleFactor),
+                ),
+                child: GlobalEffectListener(child: child!),
+              );
             },
           );
         },

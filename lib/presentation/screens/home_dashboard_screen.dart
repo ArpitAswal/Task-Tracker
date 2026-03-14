@@ -3,6 +3,7 @@ import 'package:flutter_slider_drawer/flutter_slider_drawer.dart';
 import 'package:popup_card/popup_card.dart';
 import 'package:provider/provider.dart';
 import 'package:task_tracker/core/localization/app_localizations.dart';
+import 'package:task_tracker/core/utils/extensions/context_extension.dart';
 import 'package:task_tracker/presentation/screens/profile/profile_screen.dart';
 import 'package:task_tracker/presentation/screens/setting/setting_screen.dart';
 import 'package:task_tracker/presentation/screens/task/task_screen.dart';
@@ -83,7 +84,7 @@ class _HomeDashboardViewState extends State<HomeDashboardView>
           isDraggable: false,
           key: _dKey,
           animationDuration: 600,
-          sliderOpenSize: MediaQuery.of(context).size.width * 0.75,
+          sliderOpenSize: (context.isTablet) ? context.screenWidth * 0.7 : context.screenWidth * 0.75,
           backgroundColor: theme.scaffoldBackgroundColor,
           appBar: SliderAppBar(
             config: SliderAppBarConfig(
@@ -98,7 +99,7 @@ class _HomeDashboardViewState extends State<HomeDashboardView>
                         _getTitle(index, _localizations),
                         style: theme.textTheme.titleLarge?.copyWith(
                           fontWeight: FontWeight.bold,
-                          color: theme.primaryColor,
+                          color: theme.colorScheme.primary,
                         ),
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -106,7 +107,8 @@ class _HomeDashboardViewState extends State<HomeDashboardView>
                   },
                 ),
               ),
-              drawerIconColor: theme.primaryColor,
+              drawerIconColor: theme.colorScheme.primary,
+              drawerIconSize: (context.isTablet) ? 38 : 28
             ),
           ),
           slider: MySlider(
@@ -153,8 +155,9 @@ class _HomeDashboardViewState extends State<HomeDashboardView>
             ),
             child: CircleAvatar(
               foregroundColor: theme.colorScheme.onSecondary,
-              radius: 24,
-              child: const Icon(Icons.add_task_outlined),
+              radius: (context.isTablet) ? 32 : 24,
+              child: Icon(Icons.add_task_outlined,
+              size: (context.isTablet) ? 40 : 32),
             ),
           );
         },

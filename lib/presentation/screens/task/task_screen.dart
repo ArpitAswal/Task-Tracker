@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:task_tracker/core/localization/app_localizations.dart';
+import 'package:task_tracker/core/utils/extensions/context_extension.dart';
 import 'package:task_tracker/presentation/screens/task/widgets/tasklist_widget.dart';
 
 import '../../providers/task_provider.dart';
@@ -35,8 +36,34 @@ class _TaskTabViewState extends State<TaskTabView> {
                           provider.setTabViewIndex(0);
                         },
                         style: (provider.tabviewIndex == 0)
-                            ? Theme.of(context).elevatedButtonTheme.style
-                            : Theme.of(context).outlinedButtonTheme.style,
+                            ? Theme.of(
+                                context,
+                              ).elevatedButtonTheme.style?.copyWith(
+                                padding: const WidgetStatePropertyAll(
+                                  EdgeInsets.symmetric(vertical: 4),
+                                ),
+                                shape: WidgetStatePropertyAll(
+                                  RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(
+                                      context.isTablet ? 36 : 24,
+                                    ),
+                                  ),
+                                ),
+                              )
+                            : Theme.of(
+                                context,
+                              ).outlinedButtonTheme.style?.copyWith(
+                                padding: const WidgetStatePropertyAll(
+                                  EdgeInsets.symmetric(vertical: 4),
+                                ),
+                                shape: WidgetStatePropertyAll(
+                                  RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(
+                                      context.isTablet ? 36 : 24,
+                                    ),
+                                  ),
+                                ),
+                              ),
                         child: Text(loc?.translate('pending') ?? ''),
                       ),
                     ),
@@ -48,8 +75,34 @@ class _TaskTabViewState extends State<TaskTabView> {
                           widget.tabController.animateTo(1);
                         },
                         style: (provider.tabviewIndex == 1)
-                            ? Theme.of(context).elevatedButtonTheme.style
-                            : Theme.of(context).outlinedButtonTheme.style,
+                            ? Theme.of(
+                                context,
+                              ).elevatedButtonTheme.style?.copyWith(
+                                padding: const WidgetStatePropertyAll(
+                                  EdgeInsets.symmetric(vertical: 4),
+                                ),
+                                shape: WidgetStatePropertyAll(
+                                  RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(
+                                      context.isTablet ? 36 : 24,
+                                    ),
+                                  ),
+                                ),
+                              )
+                            : Theme.of(
+                                context,
+                              ).outlinedButtonTheme.style?.copyWith(
+                                padding: const WidgetStatePropertyAll(
+                                  EdgeInsets.symmetric(vertical: 4),
+                                ),
+                                shape: WidgetStatePropertyAll(
+                                  RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(
+                                      context.isTablet ? 36 : 24,
+                                    ),
+                                  ),
+                                ),
+                              ),
                         child: Text(loc?.translate('completed') ?? ''),
                       ),
                     ),
@@ -65,8 +118,10 @@ class _TaskTabViewState extends State<TaskTabView> {
                 /// ✅ PENDING TASKS — NOW REACTIVE
                 Consumer<TaskProvider>(
                   builder: (_, provider, __) {
-                    if(provider.isInitialLoading) {
-                      return const Center(child: CircularProgressIndicator.adaptive());
+                    if (provider.isInitialLoading) {
+                      return const Center(
+                        child: CircularProgressIndicator.adaptive(),
+                      );
                     }
                     return buildTaskList(provider.pendingTasks, context, false);
                   },
@@ -75,13 +130,15 @@ class _TaskTabViewState extends State<TaskTabView> {
                 /// ✅ COMPLETED TASKS — NOW REACTIVE
                 Consumer<TaskProvider>(
                   builder: (_, provider, __) {
-                    if(provider.isInitialLoading) {
-                      return const Center(child: CircularProgressIndicator.adaptive());
+                    if (provider.isInitialLoading) {
+                      return const Center(
+                        child: CircularProgressIndicator.adaptive(),
+                      );
                     }
                     return buildTaskList(
                       provider.completedTasks,
                       context,
-                      true
+                      true,
                     );
                   },
                 ),

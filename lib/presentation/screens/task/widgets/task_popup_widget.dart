@@ -1,9 +1,8 @@
-import 'dart:math';
-
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:task_tracker/core/localization/app_localizations.dart';
+import 'package:task_tracker/core/utils/extensions/context_extension.dart';
 import '../../../../core/constants/enums.dart';
 import '../../../../core/utils/loading_overlay.dart';
 import '../../../../core/utils/message_utils.dart';
@@ -86,7 +85,8 @@ class _AddTaskSheetState extends State<AddTaskSheet> {
     final now = DateTime.now();
     if (_selectedDate.isBefore(now)) {
       context.showErrorToast(
-        l10n?.translate('date_passed') ?? "Selected date & time are already passed",
+        l10n?.translate('date_passed') ??
+            "Selected date & time are already passed",
       );
       valid = false;
     } else if (_reminderAt.isBefore(now)) {
@@ -96,7 +96,8 @@ class _AddTaskSheetState extends State<AddTaskSheet> {
       valid = false;
     } else if (_selectedDate.difference(_reminderAt).inMinutes < 10) {
       context.showErrorToast(
-        l10n?.translate('reminder_gap') ?? "Reminder time must be at least 10 minutes before task finish time",
+        l10n?.translate('reminder_gap') ??
+            "Reminder time must be at least 10 minutes before task finish time",
       );
       valid = false;
     }
@@ -304,21 +305,21 @@ class _TaskTextField extends StatelessWidget {
         ),
         border: OutlineInputBorder(
           borderSide: BorderSide(
-            color: Theme.of(context).primaryColor,
-            width: 1.5,
+            color: context.colorScheme.primary,
+            width: 0.5,
           ),
           borderRadius: BorderRadius.circular(8),
         ),
         enabledBorder: OutlineInputBorder(
           borderSide: BorderSide(
-            color: Theme.of(context).primaryColor,
-            width: 1.5,
+            color: context.colorScheme.primary,
+            width: 0.5,
           ),
           borderRadius: BorderRadius.circular(8),
         ),
         focusedBorder: OutlineInputBorder(
           borderSide: BorderSide(
-            color: Theme.of(context).primaryColor,
+            color: context.colorScheme.primary,
             width: 1.5,
           ),
           borderRadius: BorderRadius.circular(8),
@@ -366,6 +367,9 @@ class _PriorityDropdown extends StatelessWidget {
     return DropdownButtonFormField<TaskPriority>(
       initialValue: value,
       decoration: InputDecoration(labelText: l10n.priority),
+      dropdownColor: context.theme.colorScheme.secondary,
+      isDense: true,
+      isExpanded: true,
       items: TaskPriority.values.map((p) {
         return DropdownMenuItem(
           value: p,
@@ -415,6 +419,9 @@ class _CategoryDropdown extends StatelessWidget {
     return DropdownButtonFormField<TaskCategory>(
       initialValue: value,
       decoration: InputDecoration(labelText: l10n.category),
+      dropdownColor: context.theme.colorScheme.secondary,
+      isDense: true,
+      isExpanded: true,
       items: TaskCategory.values.map((c) {
         return DropdownMenuItem(
           value: c,
@@ -463,10 +470,14 @@ class _DatePickerTile extends StatelessWidget {
 
     return ListTile(
       title: Text(l10n.dueDate),
+      titleTextStyle: context.textTheme.bodyLarge?.copyWith(
+        color: context.colorScheme.surface,
+      ),
       subtitle: Text(DateFormat('MMM dd, yyyy').format(date)),
       trailing: Icon(
         Icons.calendar_today,
-        color: Theme.of(context).primaryColor,
+        color: context.colorScheme.primary,
+        size: context.isTablet ? 36 : 24,
       ),
       onTap: () async {
         final picked = await showDatePicker(
@@ -474,6 +485,55 @@ class _DatePickerTile extends StatelessWidget {
           initialDate: date,
           firstDate: DateTime.now(),
           lastDate: DateTime.now().add(const Duration(days: 365)),
+          builder: (context, child) {
+            return Theme(
+              data: ThemeData().copyWith(
+                colorScheme: (context.isDarkMode) ?
+                ColorScheme.dark(
+                  primary: context
+                      .theme
+                      .colorScheme
+                      .secondary,
+                  onPrimary:
+                      context.theme.colorScheme.onPrimary,
+                  onSurface: context
+                      .theme
+                      .colorScheme
+                      .secondary,
+                ) : ColorScheme.light(
+                  primary: context
+                      .theme
+                      .colorScheme
+                      .secondary,
+                  onPrimary:
+                  context.theme.colorScheme.onSecondary,
+                  onSurface: context
+                      .theme
+                      .colorScheme
+                      .onPrimary,
+                ),
+                datePickerTheme: DatePickerThemeData(
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(
+                      24.0,
+                    ), // Adjust to match your buttons
+                    side: BorderSide(color: context.colorScheme.primary, width: 2.0),
+                  ),
+                  cancelButtonStyle: context.theme.textButtonTheme.style,
+                  confirmButtonStyle: context.theme.textButtonTheme.style
+                ),
+              ),
+              child: Center( // Prevents the picker from stretching to fill the screen
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(
+                    maxWidth: 600.0,  // Forces a mobile-like width on tablets
+                    maxHeight: 700.0, // Limits the height to reduce the gap
+                  ),
+                  child: child!,
+                ),
+              ),
+            );
+          },
         );
         if (picked != null) {
           DateTime now = DateTime.now();
@@ -499,15 +559,67 @@ class _TimePickerTile extends StatelessWidget {
   Widget build(BuildContext context) {
     return ListTile(
       title: Text(title),
+      titleTextStyle: context.textTheme.bodyLarge?.copyWith(
+        color: context.colorScheme.surface,
+      ),
       subtitle: Text(time.format(context)),
       trailing: Icon(
         Icons.access_time_filled,
-        color: Theme.of(context).primaryColor,
+        color: context.colorScheme.primary,
+        size: context.isTablet ? 36 : 24,
       ),
       onTap: () async {
         final picked = await showTimePicker(
           context: context,
           initialTime: time,
+          builder: (context, child) {
+            return Theme(
+              data: ThemeData().copyWith(
+                textTheme: context.textTheme,
+                colorScheme: (context.isDarkMode) ?
+                ColorScheme.dark(
+                  primary: context
+                      .theme
+                      .colorScheme
+                      .secondary,
+                  onPrimary:
+                  context.theme.colorScheme.onPrimary,
+                  onSurface: context
+                      .theme
+                      .colorScheme
+                      .secondary,
+                ) : ColorScheme.light(
+                  primary: context
+                      .theme
+                      .colorScheme
+                      .secondary,
+                  onPrimary:
+                  context.theme.colorScheme.onSecondary,
+                  onSurface: context
+                      .theme
+                      .colorScheme
+                      .onPrimary,
+                ),
+                datePickerTheme: DatePickerThemeData(
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(
+                        24.0,
+                      ), // Adjust to match your buttons
+                      side: BorderSide(color: context.colorScheme.primary, width: 2.0),
+                    ),
+                    cancelButtonStyle: context.theme.textButtonTheme.style,
+                    confirmButtonStyle: context.theme.textButtonTheme.style
+                ),
+              ),
+              child: Center(
+                child: Transform.scale(
+                  // Scale up by 30% if it's a tablet
+                  scale: context.isTablet ? 1.5 : 1.0,
+                  child: child!,
+                ),
+              ),
+            );
+          },
         );
         if (picked != null) {
           onPick(picked);

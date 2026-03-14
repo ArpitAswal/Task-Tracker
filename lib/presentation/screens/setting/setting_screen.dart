@@ -7,6 +7,7 @@ import '../../../core/routes/app_routes.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/task_provider.dart';
 import '../../providers/theme_provider.dart';
+import '../../providers/locale_provider.dart';
 
 class SettingScreen extends StatefulWidget {
   const SettingScreen({super.key});
@@ -110,6 +111,61 @@ class _SettingScreenState extends State<SettingScreen> {
                     tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                   ),
                 ),
+              ),
+            ),
+          ),
+
+          const SizedBox(height: 12),
+
+          Card(
+            elevation: 0,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+              side: BorderSide(
+                color: theme.dividerColor.withValues(alpha: 0.3),
+              ),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 4),
+              child: Consumer<LocaleProvider>(
+                builder: (context, localeProvider, child) {
+                  return ListTile(
+                    leading: Icon(
+                      Icons.language_rounded,
+                      color: theme.colorScheme.primary,
+                    ),
+                    title: Text(
+                      loc?.translate('language') ?? 'Language',
+                      style: theme.textTheme.titleMedium,
+                    ),
+                    subtitle: Text(
+                      localeProvider.currentLocaleName,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                    trailing: SegmentedButton<String>(
+                      segments: const [
+                        ButtonSegment(value: 'en', label: Text('EN')),
+                        ButtonSegment(value: 'hi', label: Text('HI')),
+                      ],
+                      selected: {localeProvider.locale.languageCode},
+                      onSelectionChanged: (selected) {
+                        final code = selected.first;
+                        if (code == 'en') {
+                          localeProvider.setEnglish();
+                        } else {
+                          localeProvider.setHindi();
+                        }
+                      },
+                      showSelectedIcon: false,
+                      style: const ButtonStyle(
+                        visualDensity: VisualDensity.compact,
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      ),
+                    ),
+                  );
+                },
               ),
             ),
           ),

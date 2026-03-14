@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:task_tracker/core/localization/app_localizations.dart';
+import 'package:task_tracker/core/utils/extensions/context_extension.dart';
 import 'package:task_tracker/data/models/user_model.dart';
 import 'package:task_tracker/presentation/providers/auth_provider.dart';
 
@@ -51,7 +52,7 @@ class MySlider extends StatelessWidget {
       alignment: Alignment.centerLeft,
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [Theme.of(context).primaryColor, Theme.of(context).scaffoldBackgroundColor],
+          colors: [Theme.of(context).colorScheme.primary, Theme.of(context).scaffoldBackgroundColor],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
@@ -60,10 +61,9 @@ class MySlider extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.start,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const CircleAvatar(
-            minRadius: 32,
-            maxRadius: 52,
-            backgroundImage: AssetImage('assets/images/employees.png'),
+          CircleAvatar(
+            radius: (context.isTablet) ? 76 : 48,
+            backgroundImage: const AssetImage('assets/images/employees.png'),
           ),
           SizedBox(height: size.height * 0.025),
           Expanded(
@@ -72,8 +72,9 @@ class MySlider extends StatelessWidget {
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
               itemBuilder: (ctx, i) => ListTile(
-                contentPadding: const EdgeInsets.symmetric(horizontal: 0),
-                leading: Icon(icons[i], color: Colors.white, size: 30),
+                contentPadding:  EdgeInsets.symmetric(horizontal: (context.isTablet) ? 4 : 0),
+                horizontalTitleGap: 20,
+                leading: Icon(icons[i], color: Colors.white, size: (context.isTablet) ? 48 : 30),
                 title: Text(
                   texts[i],
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
