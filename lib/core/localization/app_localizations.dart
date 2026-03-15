@@ -284,6 +284,8 @@ class AppLocalizations {
       'longest_streak': 'Longest Streak',
       'day_streak': 'day',
       'days_streak': 'days',
+      'start_rank': 'Start Rank',
+      'end_rank': 'End Rank',
 
       // Screens Name
       'task_screen': "Task Tracker",
@@ -485,6 +487,8 @@ class AppLocalizations {
       'data_management': 'डेटा प्रबंधन',
       'delete_all_tasks': 'सभी कार्य हटाएं',
       'delete_all_tasks_confirm': 'क्या आप वाकई सभी कार्य हटाना चाहते हैं? यह क्रिया वापस नहीं ली जा सकती।',
+      'start_rank': 'रैंक प्रारंभ करें',
+      'end_rank': 'अंतिम रैंक',
 
       // Theme Options
       'light_theme': 'लाइट',

@@ -49,6 +49,7 @@ dependencies:
   lottie: ^3.1.2
   timezone: ^0.10.1
   flutter_timezone: ^5.0.1
+  shimmer: ^3.0.0
 
 dev_dependencies:
   flutter_test:

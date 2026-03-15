@@ -130,6 +130,7 @@ class _ProfileSetupState extends State<ProfileSetup>
       isDismissible: false,
       showDragHandle: true,
       useSafeArea: true,
+      constraints: const BoxConstraints(maxWidth: double.infinity),
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),

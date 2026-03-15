@@ -181,23 +181,13 @@ class TaskProvider with ChangeNotifier {
       List<TaskModel> localTasks = [];
 
       // Fetch cloud tasks (may fail offline)
-      // try {
       cloudTasks = await _taskRepository.getAllTasks(
         _userId!,
         fromLocal: false,
       );
-      // }
-      // catch (e) {
-      //   debugPrint('Cloud fetch failed during init: $e');
-      // }
 
       // Fetch local tasks
-      // try {
       localTasks = await _taskRepository.getAllTasks(_userId!, fromLocal: true);
-      // }
-      // catch (e) {
-      //   debugPrint('Local fetch failed during init: $e');
-      // }
 
       // ✨ IMPROVED SYNC LOGIC: Big to Small Sync
       if (localTasks.length > cloudTasks.length) {
@@ -420,8 +410,10 @@ class TaskProvider with ChangeNotifier {
       // Find old task to check if completion status changed
       final oldTaskIndex = _tasks.indexWhere((t) => t.id == updatedTask.id);
       final oldTask = oldTaskIndex != -1 ? _tasks[oldTaskIndex] : updatedTask;
-      final bool newlyCompleted = !oldTask.isCompleted && updatedTask.isCompleted;
-      final bool newlyIncomplete = oldTask.isCompleted && !updatedTask.isCompleted;
+      final bool newlyCompleted =
+          !oldTask.isCompleted && updatedTask.isCompleted;
+      final bool newlyIncomplete =
+          oldTask.isCompleted && !updatedTask.isCompleted;
 
       // Save updated task
       await _taskRepository.updateTask(updatedTask);
@@ -514,14 +506,25 @@ class TaskProvider with ChangeNotifier {
       );
 
       await updateTask(updatedTask: toggledTask);
-      
+
       // If we just marked a task incomplete, check if we need to reverse the streak
       if (!toggledTask.isCompleted && task.completedAt != null) {
         final now = DateTime.now();
-        if (task.completedAt!.year == now.year && task.completedAt!.month == now.month && task.completedAt!.day == now.day) {
+        if (task.completedAt!.year == now.year &&
+            task.completedAt!.month == now.month &&
+            task.completedAt!.day == now.day) {
           // It was completed today, we just marked it incomplete. Are there OTHER tasks completed today?
-          final completedToday = completedTasks.where((t) => t.id != taskId && t.completedAt != null && t.completedAt!.year == now.year && t.completedAt!.month == now.month && t.completedAt!.day == now.day).toList();
-          
+          final completedToday = completedTasks
+              .where(
+                (t) =>
+                    t.id != taskId &&
+                    t.completedAt != null &&
+                    t.completedAt!.year == now.year &&
+                    t.completedAt!.month == now.month &&
+                    t.completedAt!.day == now.day,
+              )
+              .toList();
+
           if (completedToday.isEmpty) {
             onTaskIncomplete?.call(false);
           } else {

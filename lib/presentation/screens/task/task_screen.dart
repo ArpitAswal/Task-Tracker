@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:task_tracker/core/localization/app_localizations.dart';
 import 'package:task_tracker/core/utils/extensions/context_extension.dart';
 import 'package:task_tracker/presentation/screens/task/widgets/tasklist_widget.dart';
+import 'package:task_tracker/presentation/widgets/common/custom_shimmer_widget.dart';
 
 import '../../providers/task_provider.dart';
 
@@ -119,8 +120,10 @@ class _TaskTabViewState extends State<TaskTabView> {
                 Consumer<TaskProvider>(
                   builder: (_, provider, __) {
                     if (provider.isInitialLoading) {
-                      return const Center(
-                        child: CircularProgressIndicator.adaptive(),
+                      return ListView.builder(
+                        itemCount: (context.screenWidth > 600) ? 8 : 5,
+                        itemBuilder: (context, index) =>
+                            const TaskCardShimmer(),
                       );
                     }
                     return buildTaskList(provider.pendingTasks, context, false);
@@ -131,8 +134,10 @@ class _TaskTabViewState extends State<TaskTabView> {
                 Consumer<TaskProvider>(
                   builder: (_, provider, __) {
                     if (provider.isInitialLoading) {
-                      return const Center(
-                        child: CircularProgressIndicator.adaptive(),
+                      return ListView.builder(
+                        itemCount: (context.screenWidth > 600) ? 8 : 5,
+                        itemBuilder: (context, index) =>
+                            const TaskCardShimmer(),
                       );
                     }
                     return buildTaskList(

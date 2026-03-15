@@ -148,6 +148,7 @@ extension ContextExtensions on BuildContext {
       isDismissible: isDismissible,
       enableDrag: enableDrag,
       isScrollControlled: true,
+      constraints: const BoxConstraints(maxWidth: double.infinity),
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),

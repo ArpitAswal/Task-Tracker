@@ -19,7 +19,7 @@ extension WidgetExtensions on BuildContext {
   /// Supports validation, prefix icons, and keyboard types.
   Widget themedTextField({
     required TextEditingController controller,
-    required String label,
+    String? label,
     IconData? prefixIcon,
     String? hint,
     TextInputType keyboardType = TextInputType.text,
@@ -52,6 +52,7 @@ extension WidgetExtensions on BuildContext {
       decoration: InputDecoration(
         labelText: label,
         hintText: hint,
+        hintStyle: theme.textTheme.bodyLarge,
         errorText: errorText,
         counterText: maxLength != null ? null : '',
         prefixIcon: prefixIcon != null
