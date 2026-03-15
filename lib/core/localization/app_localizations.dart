@@ -290,6 +290,22 @@ class AppLocalizations {
       'setting_screen': "App Settings",
       'profile_screen': "User Profile",
       'default_screen': "Invalid Screen",
+
+      // Countries Name
+      "india": "India",
+      "unitedstates": "United States",
+      "unitedkingdom": "United Kingdom",
+      "australia": "Australia",
+      "canada": "Canada",
+      "germany": "Germany",
+      "france": "France",
+      "japan": "Japan",
+      "china": "China",
+      "russia": "Russia",
+      "brazil": "Brazil",
+      "southafrica": "South Africa",
+      "unitedarabemirates": "United Arab Emirates",
+      "singapore": "Singapore"
     },
 
     'hi': {
@@ -539,7 +555,7 @@ class AppLocalizations {
       'choose_photo_source': 'फ़ोटो स्रोत चुनें',
       'camera': 'कैमरा',
       'gallery': 'गैलरी',
-      'member_since': 'सदस्य',
+      'member_since': 'से सदस्य',
       'statistics': 'आंकड़े',
       'total_tasks': 'कुल',
       'pending_label': 'लंबित',
@@ -565,6 +581,22 @@ class AppLocalizations {
       'setting_screen': "ऐप सेटिंग्स",
       'profile_screen': "उपयोगकर्ता प्रोफ़ाइल",
       'default_screen': "अमान्य स्क्रीन",
+
+      // Countries Name
+      "india": "भारत",
+      "unitedstates": "संयुक्त राज्य अमेरिका",
+      "unitedkingdom": "यूनाइटेड किंगडम",
+      "australia": "ऑस्ट्रेलिया",
+      "canada": "कनाडा",
+      "germany": "जर्मनी",
+      "france": "फ्रांस",
+      "japan": "जापान",
+      "china": "चीन",
+      "russia": "रूस",
+      "brazil": "ब्राज़ील",
+      "southafrica": "दक्षिण अफ्रीका",
+      "unitedarabemirates": "संयुक्त अरब अमीरात",
+      "singapore": "सिंगापुर"
     },
   };
 

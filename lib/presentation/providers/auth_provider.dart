@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/utils/exception_handling/effect_bus.dart';
 import '../../data/repositories/auth_repository.dart';
@@ -24,6 +25,7 @@ class AuthProvider with ChangeNotifier {
   bool _isEmailVerify = false;
   bool _isLoggedIn = false;
   FirebaseAuth? _firebaseAuth;
+  Locale? _lan;
 
   // Getters
   UserModel? get userData => _userData;
@@ -33,6 +35,7 @@ class AuthProvider with ChangeNotifier {
   bool get isEmailVerify => _isEmailVerify;
   bool get isAuthenticated => _isLoggedIn;
   FirebaseAuth? get firebaseAuth => _firebaseAuth;
+  Locale? get lan => _lan;
 
   // Initialize provider
   Future<void> initialize() async {
@@ -42,6 +45,7 @@ class AuthProvider with ChangeNotifier {
       _firebaseAuth = FirebaseAuth.instance;
       // Check if user is logged in
       _isLoggedIn = await _authRepository.isLoggedIn();
+      _lan = await getLanguage();
 
       // Load saved credentials if remember me is enabled
       final credentials = await _authRepository.getSavedCredentials();
@@ -68,6 +72,16 @@ class AuthProvider with ChangeNotifier {
   // Get saved credentials (for auto-fill)
   Future<Map<String, String?>> getSavedCredentials() async {
     return await _authRepository.getSavedCredentials();
+  }
+
+  Future<Locale?> getLanguage() async{
+    final prefs = await SharedPreferences.getInstance();
+    final savedLocale = prefs.getString(StorageKeys.locale);
+
+    if (savedLocale != null) {
+      return Locale(savedLocale);
+    }
+    return null;
   }
 
   // Update the doc specific field

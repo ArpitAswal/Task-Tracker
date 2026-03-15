@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:task_tracker/core/utils/extensions/context_extension.dart';
 
 import '../../theme/app_colors.dart';
 
@@ -54,13 +55,16 @@ extension WidgetExtensions on BuildContext {
         errorText: errorText,
         counterText: maxLength != null ? null : '',
         prefixIcon: prefixIcon != null
-            ? Icon(prefixIcon,
-                color: theme.colorScheme.primary.withValues(alpha: 0.7))
+            ? Icon(
+                prefixIcon,
+                color: theme.colorScheme.primary.withValues(alpha: 0.7),
+              )
             : null,
         suffixIcon: suffixIcon,
         filled: true,
-        fillColor:
-            isDark ? AppColors.darkCardBackground : AppColors.lightCardBackground,
+        fillColor: isDark
+            ? AppColors.darkCardBackground
+            : AppColors.lightCardBackground,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
           borderSide: BorderSide.none,
@@ -73,10 +77,7 @@ extension WidgetExtensions on BuildContext {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide(
-            color: theme.colorScheme.primary,
-            width: 2,
-          ),
+          borderSide: BorderSide(color: theme.colorScheme.primary, width: 2),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
@@ -106,9 +107,10 @@ extension WidgetExtensions on BuildContext {
     required VoidCallback? onPressed,
     bool isLoading = false,
     IconData? icon,
-    double height = 54,
+    double? height,
   }) {
     final theme = Theme.of(this);
+    height = isTablet ? 62 : 48;
 
     return SizedBox(
       width: double.infinity,
@@ -119,9 +121,9 @@ extension WidgetExtensions on BuildContext {
           backgroundColor: theme.colorScheme.primary,
           foregroundColor: Colors.white,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(14),
+            borderRadius: BorderRadius.circular(32),
           ),
-          elevation: 4,
+          elevation: 0,
           shadowColor: theme.colorScheme.primary.withValues(alpha: 0.3),
         ),
         child: isLoading
@@ -161,9 +163,10 @@ extension WidgetExtensions on BuildContext {
     required String label,
     required VoidCallback? onPressed,
     IconData? icon,
-    double height = 50,
+    double? height,
   }) {
     final theme = Theme.of(this);
+    height = isTablet ? 62 : 48;
 
     return SizedBox(
       width: double.infinity,
@@ -173,7 +176,9 @@ extension WidgetExtensions on BuildContext {
         style: OutlinedButton.styleFrom(
           foregroundColor: theme.colorScheme.primary,
           side: BorderSide(
-            color: theme.colorScheme.primary.withValues(alpha: 0.4),
+            color: theme.colorScheme.primary.withValues(
+              alpha: isDarkMode ? 0.8 : 0.4,
+            ),
             width: 1.5,
           ),
           shape: RoundedRectangleBorder(
@@ -184,14 +189,14 @@ extension WidgetExtensions on BuildContext {
           mainAxisSize: MainAxisSize.min,
           children: [
             if (icon != null) ...[
-              Icon(icon, size: 20),
+              Icon(icon, size: isTablet ? 32 : 21),
               const SizedBox(width: 8),
             ],
             Text(
               label,
               style: theme.textTheme.titleSmall?.copyWith(
                 fontWeight: FontWeight.w600,
-                color: theme.colorScheme.primary
+                color: theme.colorScheme.primary,
               ),
             ),
           ],
@@ -207,15 +212,18 @@ extension WidgetExtensions on BuildContext {
     required String label,
     required VoidCallback? onPressed,
     IconData? icon,
-    double height = 50,
+    double? height,
   }) {
+    height = isTablet ? 62 : 48;
     return SizedBox(
       width: double.infinity,
       height: height,
       child: ElevatedButton(
         onPressed: onPressed,
         style: ElevatedButton.styleFrom(
-          backgroundColor: AppColors.error.withValues(alpha: 0.1),
+          backgroundColor: AppColors.error.withValues(
+            alpha: 0.1,
+          ),
           foregroundColor: AppColors.error,
           elevation: 0,
           shape: RoundedRectangleBorder(
@@ -226,15 +234,15 @@ extension WidgetExtensions on BuildContext {
           mainAxisSize: MainAxisSize.min,
           children: [
             if (icon != null) ...[
-              Icon(icon, size: 20),
+              Icon(icon, size: isTablet ? 32 : 21),
               const SizedBox(width: 8),
             ],
             Text(
               label,
               style: Theme.of(this).textTheme.titleSmall?.copyWith(
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.error,
-                  ),
+                fontWeight: FontWeight.w600,
+                color: AppColors.error,
+              ),
             ),
           ],
         ),

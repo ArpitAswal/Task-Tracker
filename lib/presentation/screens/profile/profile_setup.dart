@@ -125,25 +125,29 @@ class _ProfileSetupState extends State<ProfileSetup>
 
     showModalBottomSheet(
       context: context,
-      backgroundColor: theme.cardColor,
+      backgroundColor: theme.cardTheme.color,
+      enableDrag: true,
+      isDismissible: false,
+      showDragHandle: true,
+      useSafeArea: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       builder: (ctx) => SafeArea(
         child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
+          padding: const EdgeInsets.symmetric(horizontal: 16),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Container(
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: AppColors.grey.withValues(alpha: 0.3),
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-              const SizedBox(height: 20),
+              // Container(
+              //   width: (context.screenWidth * 0.2),
+              //   height: 4,
+              //   decoration: BoxDecoration(
+              //     color: AppColors.grey.withValues(alpha: 0.3),
+              //     borderRadius: BorderRadius.circular(2),
+              //   ),
+              // ),
+              // const SizedBox(height: 20),
               Text(
                 loc?.translate('choose_photo_source') ?? 'Choose Photo Source',
                 style: theme.textTheme.titleMedium?.copyWith(
@@ -193,24 +197,27 @@ class _ProfileSetupState extends State<ProfileSetup>
       child: Column(
         children: [
           Container(
-            width: 64,
-            height: 64,
+            // width: 64,
+            // height: 64,
+            width: context.screenWidth * (context.isTablet ? 0.12 : 0.14) ,
+            height: context.screenWidth * (context.isTablet ? 0.12 : 0.14) ,
             decoration: BoxDecoration(
               color: color.withValues(alpha: 0.1),
               shape: BoxShape.circle,
               border: Border.all(color: color.withValues(alpha: 0.3), width: 2),
             ),
-            child: Icon(icon, color: color, size: 28),
+            child: Icon(icon, color: color,
+                size: (context.isTablet) ? 48 : 28),
           ),
           const SizedBox(height: 8),
           Text(
             label,
-            style: TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
+            style: context.textTheme.bodyMedium?.copyWith(
               color: color,
+              fontWeight: FontWeight.w500
             ),
           ),
+          const SizedBox(height: 20),
         ],
       ),
     );
@@ -223,22 +230,23 @@ class _ProfileSetupState extends State<ProfileSetup>
     final loc = AppLocalizations.of(context);
 
     final success = await context.withLoading(
-        message: loc?.translate('profile_updating') ?? 'Profile updating...',
-        future: authProvider.saveProfileSetup(
-      firstName: _firstNameController.text.trim(),
-      lastName: _lastNameController.text.trim().isEmpty
-          ? null
-          : _lastNameController.text.trim(),
-      email: _emailController.text.trim(),
-      photoUrl: _photoBase64,
-      gender: _selectedGender,
-      age: _ageController.text.trim().isEmpty
-          ? null
-          : int.tryParse(_ageController.text.trim()),
-      location: _locationController.text.trim().isEmpty
-          ? null
-          : _locationController.text.trim(),
-    ));
+      message: loc?.translate('profile_updating') ?? 'Profile updating...',
+      future: authProvider.saveProfileSetup(
+        firstName: _firstNameController.text.trim(),
+        lastName: _lastNameController.text.trim().isEmpty
+            ? null
+            : _lastNameController.text.trim(),
+        email: _emailController.text.trim(),
+        photoUrl: _photoBase64,
+        gender: _selectedGender,
+        age: _ageController.text.trim().isEmpty
+            ? null
+            : int.tryParse(_ageController.text.trim()),
+        location: _locationController.text.trim().isEmpty
+            ? null
+            : _locationController.text.trim(),
+      ),
+    );
 
     if (mounted) {
       if (success) {
@@ -247,7 +255,7 @@ class _ProfileSetupState extends State<ProfileSetup>
         );
         if (widget.isEditing && Navigator.of(context).canPop()) {
           Navigator.of(context).pop();
-        } else{
+        } else {
           AppRoutes.navigateAndRemoveUntil(context, AppRoutes.home);
         }
       } else {
@@ -265,7 +273,7 @@ class _ProfileSetupState extends State<ProfileSetup>
     final isDark = theme.brightness == Brightness.dark;
     final screenWidth = MediaQuery.of(context).size.width;
     final isWide = screenWidth > 600;
-    final horizontalPadding = isWide ? screenWidth * 0.15 : 20.0;
+    final horizontalPadding = screenWidth * (isWide ? 0.1 : 0.08);
 
     return Scaffold(
       appBar: widget.isEditing
@@ -280,7 +288,7 @@ class _ProfileSetupState extends State<ProfileSetup>
               elevation: 0,
               backgroundColor: Colors.transparent,
               automaticallyImplyLeading: true,
-              foregroundColor: context.theme.primaryColor,
+              foregroundColor: context.theme.colorScheme.primary,
             )
           : null,
       body: FadeTransition(
@@ -288,7 +296,7 @@ class _ProfileSetupState extends State<ProfileSetup>
         child: SingleChildScrollView(
           padding: EdgeInsets.symmetric(
             horizontal: horizontalPadding,
-            vertical: 24,
+            vertical: (context.isTablet) ? 12 : 2,
           ),
           child: Form(
             key: _formKey,
@@ -312,8 +320,8 @@ class _ProfileSetupState extends State<ProfileSetup>
                     style: theme.textTheme.labelLarge?.copyWith(),
                     textAlign: TextAlign.center,
                   ),
+                  const SizedBox(height: 16),
                 ],
-                const SizedBox(height: 32),
 
                 // ── Profile Photo ──
                 _buildPhotoSection(loc, theme, isDark),
@@ -330,14 +338,16 @@ class _ProfileSetupState extends State<ProfileSetup>
                     context: context,
                   ),
                 ),
-                const SizedBox(height: 16),
+
+                textFieldSpace(),
 
                 context.themedTextField(
                   controller: _lastNameController,
                   label: loc?.translate('last_name') ?? 'Last Name',
                   prefixIcon: Icons.person_outline_rounded,
                 ),
-                const SizedBox(height: 16),
+
+                textFieldSpace(),
 
                 context.themedTextField(
                   controller: _emailController,
@@ -352,11 +362,13 @@ class _ProfileSetupState extends State<ProfileSetup>
                     context: context,
                   ),
                 ),
-                const SizedBox(height: 16),
+
+                textFieldSpace(),
 
                 // ── Gender Dropdown ──
                 _buildGenderDropdown(loc, theme, isDark),
-                const SizedBox(height: 16),
+
+                textFieldSpace(),
 
                 context.themedTextField(
                   controller: _ageController,
@@ -365,7 +377,8 @@ class _ProfileSetupState extends State<ProfileSetup>
                   keyboardType: TextInputType.number,
                   hint: loc?.translate('enter_age') ?? 'Enter your age',
                 ),
-                const SizedBox(height: 16),
+
+                textFieldSpace(),
 
                 context.themedTextField(
                   controller: _locationController,
@@ -374,14 +387,16 @@ class _ProfileSetupState extends State<ProfileSetup>
                   hint:
                       loc?.translate('enter_location') ?? 'Enter your location',
                 ),
-                const SizedBox(height: 36),
+
+                SizedBox(height: (context.screenHeight * 0.04)),
 
                 // ── Save Button (using extension) ──
                 context.themedElevatedButton(
                   label: loc?.translate('save_profile') ?? 'Save Profile',
                   onPressed: _saveProfile,
                 ),
-                const SizedBox(height: 24),
+                SizedBox(height: (context.screenHeight * 0.04)),
+
               ],
             ),
           ),
@@ -401,20 +416,27 @@ class _ProfileSetupState extends State<ProfileSetup>
         child: Stack(
           children: [
             Container(
-              width: 120,
-              height: 120,
+              width: context.screenWidth * (context.isTablet ? 0.24 : 0.32),
+              height: context.screenWidth * (context.isTablet ? 0.24 : 0.32),
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 gradient: LinearGradient(
-                  colors: [
-                    theme.colorScheme.primary.withValues(alpha: 0.15),
-                    theme.colorScheme.secondary.withValues(alpha: 0.15),
-                  ],
+                  colors: (context.isDarkMode)
+                      ? [
+                          theme.colorScheme.primary,
+                          theme.colorScheme.secondary.withValues(alpha: 0.4),
+                        ]
+                      : [
+                          theme.colorScheme.primary.withValues(alpha: 0.15),
+                          theme.colorScheme.secondary.withValues(alpha: 0.15),
+                        ],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
                 border: Border.all(
-                  color: theme.colorScheme.primary.withValues(alpha: 0.3),
+                  color: (context.isDarkMode)
+                      ? theme.colorScheme.onPrimary
+                      : theme.colorScheme.primary.withValues(alpha: 0.3),
                   width: 3,
                 ),
                 boxShadow: [
@@ -445,20 +467,26 @@ class _ProfileSetupState extends State<ProfileSetup>
                         children: [
                           Icon(
                             Icons.add_a_photo_rounded,
-                            size: 36,
-                            color: theme.colorScheme.primary.withValues(
-                              alpha: 0.6,
-                            ),
+                            size: (context.isTablet) ? 42 : 36,
+                            color: (context.isDarkMode)
+                                ? theme.colorScheme.onPrimary
+                                : theme.colorScheme.primary.withValues(
+                                    alpha: 0.6,
+                                  ),
                           ),
-                          const SizedBox(height: 4),
-                          Text(
-                            loc?.translate('tap_to_add_photo') ?? 'Tap to add',
-                            style: TextStyle(
-                              fontSize: 10,
-                              color: theme.colorScheme.primary.withValues(
-                                alpha: 0.6,
+                          Padding(
+                            padding: const EdgeInsets.all(8.0),
+                            child: Text(
+                              loc?.translate('tap_to_add_photo') ??
+                                  'Tap to add',
+                              style: TextStyle(
+                                fontSize: 10,
+                                color: (context.isDarkMode)
+                                    ? theme.colorScheme.onPrimary
+                                    : theme.colorScheme.primary,
+                                fontWeight: FontWeight.w500,
                               ),
-                              fontWeight: FontWeight.w500,
+                              textAlign: TextAlign.center,
                             ),
                           ),
                         ],
@@ -467,16 +495,20 @@ class _ProfileSetupState extends State<ProfileSetup>
             ),
             // Camera badge
             Positioned(
-              bottom: 4,
-              right: 4,
+              bottom: (context.isTablet) ? 8 : 4,
+              right: (context.isTablet) ? 8 : 4,
               child: Container(
-                width: 34,
-                height: 34,
+                width: (context.isTablet) ? 48 : 34,
+                height: (context.isTablet) ? 48 : 34,
                 decoration: BoxDecoration(
-                  color: theme.colorScheme.primary,
+                  color: (context.isDarkMode)
+                      ? theme.colorScheme.onPrimary
+                      : theme.colorScheme.primary,
                   shape: BoxShape.circle,
                   border: Border.all(
-                    color: theme.scaffoldBackgroundColor,
+                    color: (context.isDarkMode)
+                        ? theme.colorScheme.secondary
+                        : theme.colorScheme.onSecondary,
                     width: 3,
                   ),
                   boxShadow: [
@@ -486,10 +518,12 @@ class _ProfileSetupState extends State<ProfileSetup>
                     ),
                   ],
                 ),
-                child: const Icon(
+                child: Icon(
                   Icons.camera_alt_rounded,
-                  color: Colors.white,
-                  size: 16,
+                  color: (context.isDarkMode)
+                      ? theme.colorScheme.secondary
+                      : theme.colorScheme.onSecondary,
+                  size: (context.isTablet) ? 28 : 16,
                 ),
               ),
             ),
@@ -549,12 +583,17 @@ class _ProfileSetupState extends State<ProfileSetup>
           .map(
             (g) => DropdownMenuItem<String>(
               value: g['value'],
-              child: Text(g['label']!,
-              style: theme.textTheme.bodyLarge),
+              child: Text(g['label']!, style: theme.textTheme.bodyLarge),
             ),
           )
           .toList(),
       onChanged: (val) => setState(() => _selectedGender = val),
+    );
+  }
+
+  Widget textFieldSpace(){
+    return SizedBox(
+      height: (context.isTablet) ? 24 : 16,
     );
   }
 }

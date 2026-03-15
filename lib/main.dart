@@ -100,16 +100,16 @@ class MyApp extends StatelessWidget {
               // Calculate responsive text scale factor
               final mediaQueryData = MediaQuery.of(context);
               final screenWidth = mediaQueryData.size.width;
-              double textScaleFactor = 1.0;
+              double textScaleFactor = 0.8;
 
               if (screenWidth >= 600) {
                 // Tablet portrait or landscape
-                textScaleFactor = 1.75;
+                textScaleFactor = 1.5;
               } else if (screenWidth <= 360) {
                 // Small phones
-                textScaleFactor = 0.9;
+                textScaleFactor = 0.6;
               }
-
+              print("text scale factor: $textScaleFactor}");
               return MediaQuery(
                 data: mediaQueryData.copyWith(
                   textScaler: TextScaler.linear(textScaleFactor),
