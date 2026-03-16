@@ -392,6 +392,102 @@ class TaskRepository {
     }
   }
 
+  /// Perform a robust two-way synchronization between local and cloud tasks
+  ///
+  /// [userId] - User ID to sync tasks for
+  ///
+  /// Returns: Merged and up-to-date List of tasks
+  Future<List<TaskModel>> performRobustSync(String userId) async {
+    try {
+      // 1. Fetch both datasets
+      final localTasks = await getAllTasks(userId, fromLocal: true);
+      final cloudTasks = await getAllTasks(userId, fromLocal: false);
+
+      // 2. Create Maps for O(1) lookups by ID
+      final localMap = {for (final task in localTasks) task.id: task};
+      final cloudMap = {for (final task in cloudTasks) task.id: task};
+
+      final box = _storageService.getTypedBox<TaskModel>(
+        "${AppConstants.taskBox}_$userId",
+      );
+
+      final WriteBatch batch = _firestore.batch();
+      bool hasCloudUpdates = false;
+
+      // 3. Process Cloud Tasks (What exists in cloud)
+      for (final cloudTask in cloudTasks) {
+        final localTask = localMap[cloudTask.id];
+
+        if (localTask == null) {
+          // Exists in cloud but not local -> Add/Update locally
+          await box.put(cloudTask.id, cloudTask);
+        } else {
+          // Exists in both -> Check timestamps to see which is newer
+          // Add a 1-minute buffer to prevent constant overwriting on minor differences
+          if (cloudTask.updatedAt != null && localTask.updatedAt != null) {
+            final difference = cloudTask.updatedAt!
+                .difference(localTask.updatedAt!)
+                .abs();
+
+            if (difference > const Duration(minutes: 1)) {
+              if (cloudTask.updatedAt!.isAfter(localTask.updatedAt!)) {
+                // Cloud is newer -> Update Locally
+                await box.put(cloudTask.id, cloudTask);
+              } else if (localTask.updatedAt!.isAfter(cloudTask.updatedAt!)) {
+                // Local is newer -> Update Cloud
+                final docRef = _firestore
+                    .collection(FirebaseCollections.tasks)
+                    .doc(userId)
+                    .collection(FirebaseCollections.userTasks)
+                    .doc(localTask.id);
+                batch.set(docRef, localTask.toJson(), SetOptions(merge: true));
+                hasCloudUpdates = true;
+              }
+            }
+          } else if (cloudTask.updatedAt != null &&
+              localTask.updatedAt == null) {
+            await box.put(cloudTask.id, cloudTask);
+          } else if (localTask.updatedAt != null &&
+              cloudTask.updatedAt == null) {
+            final docRef = _firestore
+                .collection(FirebaseCollections.tasks)
+                .doc(userId)
+                .collection(FirebaseCollections.userTasks)
+                .doc(localTask.id);
+            batch.set(docRef, localTask.toJson(), SetOptions(merge: true));
+            hasCloudUpdates = true;
+          }
+        }
+      }
+
+      // 4. Process Local Tasks (What exists locally but NOT in cloud)
+      for (final localTask in localTasks) {
+        if (!cloudMap.containsKey(localTask.id)) {
+          // Create in cloud
+          final docRef = _firestore
+              .collection(FirebaseCollections.tasks)
+              .doc(userId)
+              .collection(FirebaseCollections.userTasks)
+              .doc(localTask.id);
+          batch.set(docRef, localTask.toJson(), SetOptions(merge: true));
+          hasCloudUpdates = true;
+        }
+      }
+
+      // 5. Commit batch to Firestore if there were any changes to push
+      if (hasCloudUpdates) {
+        await batch.commit();
+      }
+
+      // 6. Return the finalized synced local list
+      return await getAllTasks(userId, fromLocal: true);
+    } catch (e) {
+      debugPrint("Robust sync failed: $e");
+      // Fallback: If sync fails (e.g., offline), just return local tasks
+      return await getAllTasks(userId, fromLocal: true);
+    }
+  }
+
   // ============================================================================
   // STATISTICS
   // ============================================================================
@@ -424,11 +520,10 @@ class TaskRepository {
   /// Increment the completed tasks count for a specific user
   Future<void> completedTaskCount(String uid, bool isInc) async {
     try {
-      await _firestore
-          .collection(FirebaseCollections.users)
-          .doc(uid)
-          .update({
-        'completedTasksCount': (isInc) ? FieldValue.increment(1) : FieldValue.increment(-1),
+      await _firestore.collection(FirebaseCollections.users).doc(uid).update({
+        'completedTasksCount': (isInc)
+            ? FieldValue.increment(1)
+            : FieldValue.increment(-1),
       });
     } catch (e) {
       debugPrint('Failed to increment completed tasks: $e');

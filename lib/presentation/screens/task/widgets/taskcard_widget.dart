@@ -19,22 +19,43 @@ Widget buildTaskCard(TaskModel task, BuildContext context) {
   final priorityColor = task.priorityColor;
   final categoryColor = task.categoryColor;
   final loc = AppLocalizations.of(context)!;
+  final darkMode = context.isDarkMode;
 
   final cardGradient = LinearGradient(
     colors: task.isCompleted
-        ? [
-            AppColors.success.withValues(alpha: 0.1),
-            AppColors.white.withValues(alpha: 0.3),
-          ]
+        ? (darkMode)
+              ? [
+                  AppColors.black.withValues(alpha: 0.1),
+                  AppColors.success.withValues(alpha: 0.2),
+                ]
+              : [
+                  AppColors.success.withValues(alpha: 0.1),
+                  AppColors.white.withValues(alpha: 0.3),
+                ]
         : (isOverdue)
-        ? [
-            AppColors.error.withValues(alpha: 0.1),
-            AppColors.white.withValues(alpha: 0.3),
-          ]
+        ? (darkMode)
+              ? [
+                  AppColors.black.withValues(alpha: 0.1),
+                  AppColors.error.withValues(alpha: 0.2),
+                ]
+              : [
+                  AppColors.error.withValues(alpha: 0.1),
+                  AppColors.white.withValues(alpha: 0.3),
+                ]
         : (task.isDueToday)
+        ? (darkMode)
+              ? [
+                  AppColors.black.withValues(alpha: 0.1),
+                  AppColors.warning.withValues(alpha: 0.2),
+                ]
+              : [
+                  AppColors.warning.withValues(alpha: 0.1),
+                  AppColors.white.withValues(alpha: 0.3),
+                ]
+        : (darkMode)
         ? [
-            AppColors.warning.withValues(alpha: 0.1),
-            AppColors.white.withValues(alpha: 0.3),
+            AppColors.black.withValues(alpha: 0.1),
+            AppColors.info.withValues(alpha: 0.2),
           ]
         : [
             AppColors.info.withValues(alpha: 0.1),
@@ -53,7 +74,7 @@ Widget buildTaskCard(TaskModel task, BuildContext context) {
       : AppColors.info;
 
   return Padding(
-    padding: const EdgeInsets.only(top: 24),
+    padding: EdgeInsets.only(top: (context.isTablet ? 24 : 8)),
     child: Slidable(
       key: ValueKey(task.id),
       startActionPane: (task.isCompleted)
@@ -111,9 +132,9 @@ Widget buildTaskCard(TaskModel task, BuildContext context) {
           borderRadius: BorderRadius.circular(21),
           boxShadow: [
             BoxShadow(
-              color: statusColor.withValues(alpha: 0.2),
-              blurRadius: 12,
-              offset: const Offset(-4, 8),
+              color: statusColor.withValues(alpha: darkMode ? 0.5 : 0.2),
+              blurRadius: 4,
+              offset: const Offset(-4, 4),
             ),
           ],
         ),
@@ -124,15 +145,16 @@ Widget buildTaskCard(TaskModel task, BuildContext context) {
               borderRadius: BorderRadius.circular(21),
               clipBehavior: Clip.antiAlias,
               child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 10,
+                padding: EdgeInsets.symmetric(
+                  horizontal: 8,
+                  vertical: (context.isTablet) ? 8 : 2,
                 ),
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(21),
                   gradient: cardGradient,
                 ),
                 child: Column(
+                  mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Row(
@@ -140,8 +162,13 @@ Widget buildTaskCard(TaskModel task, BuildContext context) {
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
                         Transform.scale(
-                          scale: 1.5,
+                          scale: (context.isTablet) ? 1.5 : 1,
                           child: Checkbox(
+                            // This shrinks the hit area to the size of the box itself
+                            materialTapTargetSize:
+                                MaterialTapTargetSize.shrinkWrap,
+                            // This removes extra padding around the checkbox
+                            visualDensity: VisualDensity.compact,
                             value: task.isCompleted,
                             onChanged: (bool? value) {
                               if (value != null) {
@@ -150,7 +177,7 @@ Widget buildTaskCard(TaskModel task, BuildContext context) {
                             },
                           ),
                         ),
-                        const SizedBox(width: 6),
+                        SizedBox(width: (context.isTablet) ? 8 : 0),
                         Expanded(
                           child: Row(
                             crossAxisAlignment: CrossAxisAlignment.center,
@@ -160,21 +187,21 @@ Widget buildTaskCard(TaskModel task, BuildContext context) {
                                   task.title,
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
-                                  style: theme.textTheme.headlineSmall
-                                      ?.copyWith(
-                                        color: Colors.black54,
-                                        fontWeight: FontWeight.w600,
-                                      ),
+                                  style: theme.textTheme.titleMedium?.copyWith(
+                                    fontWeight: FontWeight.w600,
+                                  ),
                                 ),
                               ),
-                              const SizedBox(width: 8),
+                              SizedBox(width: (context.isTablet) ? 12 : 8),
                               Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 8,
-                                  vertical: 5,
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: (context.isTablet) ? 12 : 8,
+                                  vertical: (context.isTablet) ? 8 : 5,
                                 ),
                                 decoration: BoxDecoration(
-                                  color: priorityColor.withValues(alpha: 0.1),
+                                  color: priorityColor.withValues(
+                                    alpha: darkMode ? 0.2 : 0.1,
+                                  ),
                                   borderRadius: BorderRadius.circular(32),
                                 ),
                                 alignment: Alignment.center,
@@ -183,7 +210,7 @@ Widget buildTaskCard(TaskModel task, BuildContext context) {
                                   children: [
                                     Icon(
                                       Icons.flag_outlined,
-                                      size: 14,
+                                      size: context.isTablet ? 21 : 14,
                                       color: priorityColor,
                                     ),
                                     const SizedBox(width: 4),
@@ -198,14 +225,16 @@ Widget buildTaskCard(TaskModel task, BuildContext context) {
                                   ],
                                 ),
                               ),
-                              const SizedBox(width: 4),
+                              SizedBox(width: (context.isTablet) ? 8 : 4),
                               Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 8,
-                                  vertical: 5,
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: (context.isTablet) ? 12 : 8,
+                                  vertical: (context.isTablet) ? 8 : 5,
                                 ),
                                 decoration: BoxDecoration(
-                                  color: categoryColor.withValues(alpha: 0.1),
+                                  color: categoryColor.withValues(
+                                    alpha: darkMode ? 0.2 : 0.1,
+                                  ),
                                   borderRadius: BorderRadius.circular(32),
                                 ),
                                 alignment: Alignment.center,
@@ -214,7 +243,7 @@ Widget buildTaskCard(TaskModel task, BuildContext context) {
                                   children: [
                                     Icon(
                                       Icons.category_outlined,
-                                      size: 14,
+                                      size: context.isTablet ? 21 : 14,
                                       color: categoryColor,
                                     ),
                                     const SizedBox(width: 4),
@@ -235,14 +264,13 @@ Widget buildTaskCard(TaskModel task, BuildContext context) {
                       ],
                     ),
                     if (hasDescription) ...[
-                      const SizedBox(height: 2),
                       Text(
                         task.description!.trim(),
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                         style: theme.textTheme.bodyLarge?.copyWith(
                           fontWeight: FontWeight.w500,
-                          color: statusColor.withValues(alpha: 1),
+                          color: statusColor,
                         ),
                       ),
                     ],
@@ -253,21 +281,23 @@ Widget buildTaskCard(TaskModel task, BuildContext context) {
                       crossAxisAlignment: WrapCrossAlignment.center,
                       children: [
                         Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 10,
-                            vertical: 6,
+                          padding: EdgeInsets.symmetric(
+                            horizontal: (context.isTablet) ? 12 : 8,
+                            vertical: (context.isTablet) ? 8 : 5,
                           ),
                           decoration: BoxDecoration(
-                            color: AppColors.info.withValues(alpha: 0.15),
+                            color: AppColors.info.withValues(
+                              alpha: darkMode ? 0.1 : 0.15,
+                            ),
                             borderRadius: BorderRadius.circular(32),
                           ),
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
                             mainAxisAlignment: MainAxisAlignment.start,
                             children: [
-                              const Icon(
+                              Icon(
                                 Icons.event_rounded,
-                                size: 14,
+                                size: context.isTablet ? 21 : 14,
                                 color: AppColors.info,
                               ),
                               const SizedBox(width: 6),
@@ -319,6 +349,7 @@ Widget buildTaskCard(TaskModel task, BuildContext context) {
                           ),
                       ],
                     ),
+                    const SizedBox(height: 6),
                   ],
                 ),
               ),
@@ -416,9 +447,12 @@ Widget _statusTag({
 }) {
   final theme = Theme.of(context);
   return Container(
-    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+    padding: EdgeInsets.symmetric(
+      horizontal: (context.isTablet) ? 12 : 8,
+      vertical: (context.isTablet) ? 8 : 5,
+    ),
     decoration: BoxDecoration(
-      color: color.withValues(alpha: 0.15),
+      color: color.withValues(alpha: (context.isDarkMode) ? 0.1 : 0.15),
       borderRadius: BorderRadius.circular(32),
     ),
     child: Text(

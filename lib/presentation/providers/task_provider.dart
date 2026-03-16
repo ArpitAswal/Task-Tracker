@@ -177,37 +177,8 @@ class TaskProvider with ChangeNotifier {
     notifyListeners();
 
     try {
-      List<TaskModel> cloudTasks = [];
-      List<TaskModel> localTasks = [];
-
-      // Fetch cloud tasks (may fail offline)
-      cloudTasks = await _taskRepository.getAllTasks(
-        _userId!,
-        fromLocal: false,
-      );
-
-      // Fetch local tasks
-      localTasks = await _taskRepository.getAllTasks(_userId!, fromLocal: true);
-
-      // ✨ IMPROVED SYNC LOGIC: Big to Small Sync
-      if (localTasks.length > cloudTasks.length) {
-        // Local has more data -> Sync to Cloud
-        await _taskRepository.syncLocalToCloud(_userId!);
-        _tasks = localTasks; // Use local data as source of truth
-      } else if (cloudTasks.length > localTasks.length) {
-        // Cloud has more data -> Sync to Local
-        _tasks = await _taskRepository.syncCloudToLocal(_userId!);
-      } else {
-        // Data count matches -> Check timestamps for updates
-        var (sync, type) = _needsSync(localTasks, cloudTasks);
-        if (sync && (type == 1)) {
-          _tasks = await _taskRepository.syncCloudToLocal(_userId!);
-        } else if (sync && (type == 2)) {
-          await _taskRepository.syncLocalToCloud(_userId!);
-        } else {
-          _tasks = localTasks;
-        }
-      }
+      // ✨ IMPROVED SYNC LOGIC: Robust ID-Based Two-Way Sync
+      _tasks = await _taskRepository.performRobustSync(_userId!);
 
       // Check for overdue tasks and show daily notification if needed
       await NotificationService.checkAndNotifyOverdueTasks(_tasks);
@@ -219,47 +190,6 @@ class TaskProvider with ChangeNotifier {
     }
   }
 
-  /// Check if synchronization is needed based on timestamps
-  ///
-  /// [local] - List of local tasks
-  /// [cloud] - List of cloud tasks
-  ///
-  /// Returns: True if cloud has newer data that should be synced to local
-  /// Records are the direct replacement for Pair. They are lightweight, type-safe, and don't require any boilerplate.
-  (bool, int) _needsSync(List<TaskModel> local, List<TaskModel> cloud) {
-    // Create a map of local tasks for O(1) lookup
-    // Key: Task ID, Value: Last updated timestamp
-    final localMap = {for (final t in local) t.id: t.updatedAt};
-
-    for (final cloudTask in cloud) {
-      final localUpdatedAt = localMap[cloudTask.id];
-
-      // 1. If task exists in cloud but not locally, we need to sync (download it)
-      if (localUpdatedAt == null) return (true, 1);
-
-      // 2. If task exists in both, check if cloud version is newer
-      // We use a 1-minute threshold to avoid syncing for minor differences
-      // caused by execution time latency between local and cloud saves.
-      if (cloudTask.updatedAt != null) {
-        final difference = cloudTask.updatedAt!
-            .difference(localUpdatedAt)
-            .abs();
-
-        // Only sync if cloud is newer AND difference is > 1 minute
-        if (difference > const Duration(minutes: 1)) {
-          if (cloudTask.updatedAt!.isAfter(localUpdatedAt)) {
-            return (true, 1); // cloud is newer
-          } else {
-            return (true, 2); // local is newer
-          }
-        }
-      }
-    }
-
-    // No significant updates found in cloud
-    return (false, 0);
-  }
-
   /// Load all tasks for current user
   ///
   /// [fromLocal] - If true, load from Hive; if false, load from Firestore
@@ -267,22 +197,8 @@ class TaskProvider with ChangeNotifier {
     if (_userId == null) return;
 
     try {
-      // Fetch all tasks
-      final local = await _taskRepository.getAllTasks(
-        _userId!,
-        fromLocal: true,
-      );
-
-      final cloud = await _taskRepository.getAllTasks(
-        _userId!,
-        fromLocal: false,
-      );
-
-      if (local.length != cloud.length) {
-        _tasks = await _taskRepository.syncCloudToLocal(_userId!);
-      } else {
-        _tasks = local;
-      }
+      // Perform robust two-way sync
+      _tasks = await _taskRepository.performRobustSync(_userId!);
 
       // Filter tasks into categories
       // await _filterTasks();
