@@ -7,10 +7,11 @@ import '../../../core/routes/app_routes.dart';
 import '../../../core/utils/app_validators.dart';
 import '../../../core/utils/curved_clipper.dart';
 import '../../../core/constants/app_constants.dart';
+import '../../../core/utils/extensions/context_extension.dart';
+import '../../../core/utils/extensions/widget_extensions.dart';
 import '../../../core/utils/loading_overlay.dart';
 import '../../../core/utils/message_utils.dart';
 import '../../providers/auth_provider.dart';
-import '../../widgets/common/custom_button.dart';
 import '../../widgets/common/custom_text_form_fields.dart';
 
 class SignupScreen extends StatefulWidget {
@@ -103,7 +104,9 @@ class _SignupScreenState extends State<SignupScreen> {
                 children: [
                   Expanded(
                     child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                      padding: EdgeInsets.symmetric(
+                        horizontal: (context.isTablet) ? 48 : 24.0,
+                      ),
                       child: Form(
                         key: _formKey,
                         child: Column(
@@ -131,7 +134,7 @@ class _SignupScreenState extends State<SignupScreen> {
                             // Title
                             Text(
                               localization.signupTitle,
-                              style: theme.textTheme.displaySmall,
+                              style: theme.textTheme.displayMedium,
                             ),
 
                             const SizedBox(height: 4),
@@ -141,13 +144,35 @@ class _SignupScreenState extends State<SignupScreen> {
                               textAlign: TextAlign.center,
                               text: TextSpan(
                                 text: localization.signupSubtitle,
-                                style: theme.textTheme.bodyMedium,
+                                style: (context.isTablet)
+                                    ? theme.textTheme.titleLarge?.copyWith(
+                                  color: theme
+                                      .textTheme
+                                      .bodySmall
+                                      ?.color,
+                                  fontWeight: theme
+                                      .textTheme
+                                      .bodySmall
+                                      ?.fontWeight,
+                                )
+                                    : theme.textTheme.bodySmall,
                                 children: [
                                   TextSpan(
                                     text: ' ${localization.termsPrivacy}',
-                                    style: theme.textTheme.bodyMedium?.copyWith(
+                                    style: (context.isTablet)
+                                        ? theme.textTheme.titleLarge
+                                        ?.copyWith(
                                       fontWeight: FontWeight.bold,
-                                      color: theme.colorScheme.primary,
+                                      color: theme
+                                          .colorScheme
+                                          .primary,
+                                    )
+                                        : theme.textTheme.bodySmall
+                                        ?.copyWith(
+                                      fontWeight: FontWeight.bold,
+                                      color: theme
+                                          .colorScheme
+                                          .primary,
                                     ),
                                   ),
                                 ],
@@ -188,10 +213,12 @@ class _SignupScreenState extends State<SignupScreen> {
                             const SizedBox(height: 24),
 
                             // Register Button
-                            CustomButton(
-                              text: localization.signup,
+                            context.themedElevatedButton(
+                              label: localization.signup,
                               onPressed: _handleSignup,
                             ),
+
+                            SizedBox(height: (context.isTablet) ? 8 : 0),
                             // Login Link
                             Row(
                               mainAxisAlignment: MainAxisAlignment.center,
@@ -199,8 +226,11 @@ class _SignupScreenState extends State<SignupScreen> {
                               children: [
                                 Text(
                                   localization.alreadyHaveAccount,
-                                  style: theme.textTheme.bodyMedium,
+                                  style: (context.isTablet)
+                                      ? theme.textTheme.bodyMedium
+                                      : theme.textTheme.bodyLarge,
                                 ),
+                                SizedBox(width: (context.isTablet) ? 8 : 0),
                                 TextButton(
                                   onPressed: _navigateToLogin,
                                   child: Text(
@@ -211,6 +241,7 @@ class _SignupScreenState extends State<SignupScreen> {
                                       decorationColor:
                                           theme.colorScheme.primary,
                                     ),
+                                    textAlign: TextAlign.start,
                                   ),
                                 ),
                               ],

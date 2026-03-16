@@ -70,8 +70,8 @@ class AppTheme {
         foregroundColor: AppColors.white,
         padding: EdgeInsets.zero,
         elevation: 0,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-        textStyle: AppTextStyles.lightTextTheme.titleMedium,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(36)),
+        textStyle: AppTextStyles.lightTextTheme.titleLarge,
       ),
     ),
 

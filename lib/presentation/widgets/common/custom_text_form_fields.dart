@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:task_tracker/core/utils/extensions/context_extension.dart';
 
 import '../../../core/theme/app_colors.dart';
 
@@ -74,7 +75,7 @@ class CustomTextField extends StatelessWidget {
       decoration: InputDecoration(
         labelText: labelText,
         hintText: hintText,
-        prefixIcon: prefixIcon != null ? Icon(prefixIcon) : null,
+        prefixIcon: prefixIcon != null ? Icon(prefixIcon, size: context.isTablet ? 36 : 22) : null,
         suffixIcon: suffixIcon,
         contentPadding: contentPadding,
         fillColor: Theme.of(context).scaffoldBackgroundColor,

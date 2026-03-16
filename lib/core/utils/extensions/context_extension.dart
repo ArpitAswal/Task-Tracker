@@ -110,26 +110,47 @@ extension ContextExtensions on BuildContext {
     );
   }
 
-  /// Show alert dialog
   Future<bool?> showAlertDialog({
     required String title,
     required String message,
     String? confirmText,
     String? cancelText,
   }) {
+    final currentTheme = theme;
     return showDialog<bool>(
       context: this,
       builder: (context) => AlertDialog(
-        title: Text(title),
-        content: Text(message),
+        backgroundColor: currentTheme.scaffoldBackgroundColor,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Text(
+          title,
+          style: currentTheme.textTheme.titleLarge?.copyWith(
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        content: Text(
+          message,
+          style: currentTheme.textTheme.bodyMedium,
+        ),
         actions: [
           if (cancelText != null)
             TextButton(
               onPressed: () => Navigator.of(context).pop(false),
+              style: TextButton.styleFrom(
+                foregroundColor: currentTheme.colorScheme.onSurface.withOpacity(0.6),
+              ),
               child: Text(cancelText),
             ),
-          TextButton(
+          ElevatedButton(
             onPressed: () => Navigator.of(context).pop(true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: currentTheme.colorScheme.primary,
+              foregroundColor: Colors.white,
+              elevation: 0,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
             child: Text(confirmText ?? 'OK'),
           ),
         ],

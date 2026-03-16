@@ -4,10 +4,10 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:task_tracker/core/localization/app_localizations.dart';
 import 'package:task_tracker/core/utils/loading_overlay.dart';
-import 'package:task_tracker/presentation/widgets/common/custom_button.dart';
 
 import '../../../core/constants/app_constants.dart';
 import '../../../core/routes/app_routes.dart';
+import '../../../core/utils/extensions/widget_extensions.dart';
 import '../../providers/auth_provider.dart';
 
 class EmailVerificationScreen extends StatefulWidget {
@@ -145,16 +145,16 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
                 ),
                 const SizedBox(height: 30),
 
-                CustomButton(
+                context.themedElevatedButton(
                   onPressed: canResend ? resendEmail : null,
-                  text: canResend
+                  label: canResend
                       ? (loc?.resendEmail ?? "Resend Email")
                       : "${loc?.resendIn ?? "Resend in"}"
                             " $resendCooldown s",
                 ),
 
                 const SizedBox(height: 20),
-                CustomButton(
+                context.themedOutlinedButton(
                   onPressed: () {
                     runningTimer?.cancel();
                     _authProvider.logout();
@@ -162,8 +162,7 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
                     // Navigate to login
                     AppRoutes.navigateAndRemoveUntil(context, AppRoutes.login);
                   },
-                  text: loc?.anotherAccount ?? "Use another account",
-                  isOutlined: true,
+                  label: loc?.anotherAccount ?? "Use another account",
                 ),
               ],
             ),

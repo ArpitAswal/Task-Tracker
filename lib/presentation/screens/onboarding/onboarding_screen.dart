@@ -4,8 +4,8 @@ import '../../../core/localization/app_localizations.dart';
 import '../../../core/routes/app_routes.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/services/storage_service.dart';
+import '../../../core/utils/extensions/widget_extensions.dart';
 import '../../../data/models/onboarding_model.dart';
-import '../../widgets/common/custom_button.dart';
 import 'onboarding_page.dart';
 
 class OnboardingScreen extends StatefulWidget {
@@ -137,12 +137,12 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               // Continue/Get Started button
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 24.0),
-                child: CustomButton(
-                  text: isLastPage
+                child: context.themedElevatedButton(
+                  label: isLastPage
                       ? localization.letsStart
                       : localization.translate('continue'),
                   onPressed: _nextPage,
-                  icon: const Icon(Icons.arrow_forward),
+                  icon: Icons.arrow_forward,
                   width: size.width * 0.5,
                 ),
               ),

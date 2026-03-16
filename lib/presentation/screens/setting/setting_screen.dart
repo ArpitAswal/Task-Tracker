@@ -4,6 +4,7 @@ import 'package:task_tracker/core/localization/app_localizations.dart';
 import 'package:task_tracker/core/services/notification_service.dart';
 
 import '../../../core/routes/app_routes.dart';
+import '../../../core/utils/extensions/context_extension.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/task_provider.dart';
 import '../../providers/theme_provider.dart';
@@ -265,32 +266,12 @@ class _SettingScreenState extends State<SettingScreen> {
     BuildContext context,
     AppLocalizations? loc,
   ) async {
-    final theme = Theme.of(context);
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(loc?.translate('delete_all_tasks') ?? 'Delete All Tasks'),
-        content: Text(
-          loc?.translate('delete_all_tasks_confirm') ??
-              'Are you sure you want to delete all tasks? This action cannot be undone.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: Text(loc?.translate('cancel') ?? 'Cancel'),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: theme.colorScheme.error,
-            ),
-            onPressed: () => Navigator.pop(ctx, true),
-            child: Text(
-              loc?.translate('delete') ?? 'Delete',
-              style: TextStyle(color: theme.colorScheme.onError),
-            ),
-          ),
-        ],
-      ),
+    final confirmed = await context.showAlertDialog(
+      title: loc?.translate('delete_all_tasks') ?? 'Delete All Tasks',
+      message: loc?.translate('delete_all_tasks_confirm') ??
+          'Are you sure you want to delete all tasks? This action cannot be undone.',
+      confirmText: loc?.translate('delete') ?? 'Delete',
+      cancelText: loc?.translate('cancel') ?? 'Cancel',
     );
 
     if (confirmed == true && context.mounted) {

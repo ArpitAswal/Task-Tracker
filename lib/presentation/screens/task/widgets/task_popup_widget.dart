@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:task_tracker/core/localization/app_localizations.dart';
 import 'package:task_tracker/core/utils/extensions/context_extension.dart';
 import '../../../../core/constants/enums.dart';
+import '../../../../core/utils/extensions/widget_extensions.dart';
 import '../../../../core/utils/loading_overlay.dart';
 import '../../../../core/utils/message_utils.dart';
 import '../../../../data/models/task_model.dart';
@@ -616,7 +617,7 @@ class _TimePickerTile extends StatelessWidget {
               child: Center(
                 child: Transform.scale(
                   // Scale up by 30% if it's a tablet
-                  scale: context.isTablet ? 1.5 : 1.0,
+                  scale: context.isTablet ? 1.5 : 0.9,
                   child: child!,
                 ),
               ),
@@ -649,11 +650,17 @@ class _FooterButtons extends StatelessWidget {
     return Row(
       children: [
         Expanded(
-          child: OutlinedButton(onPressed: onCancel, child: Text(cancelLabel!)),
+          child: context.themedOutlinedButton(
+            label: cancelLabel!,
+            onPressed: onCancel,
+          ),
         ),
         const SizedBox(width: 8),
         Expanded(
-          child: ElevatedButton(onPressed: onSubmit, child: Text(confirmLabel)),
+          child: context.themedElevatedButton(
+            label: confirmLabel,
+            onPressed: onSubmit,
+          ),
         ),
       ],
     );

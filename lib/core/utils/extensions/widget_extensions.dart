@@ -109,24 +109,17 @@ extension WidgetExtensions on BuildContext {
     bool isLoading = false,
     IconData? icon,
     double? height,
+    double? width,
   }) {
     final theme = Theme.of(this);
-    height = isTablet ? 62 : 48;
+    height = isTablet ? 62 : 44;
 
     return SizedBox(
-      width: double.infinity,
+      width: width ?? double.infinity,
       height: height,
       child: ElevatedButton(
         onPressed: isLoading ? null : onPressed,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: theme.colorScheme.primary,
-          foregroundColor: Colors.white,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(32),
-          ),
-          elevation: 0,
-          shadowColor: theme.colorScheme.primary.withValues(alpha: 0.3),
-        ),
+        style: theme.elevatedButtonTheme.style,
         child: isLoading
             ? const SizedBox(
                 width: 24,
@@ -140,16 +133,10 @@ extension WidgetExtensions on BuildContext {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   if (icon != null) ...[
-                    Icon(icon, size: 20),
-                    const SizedBox(width: 8),
+                    Icon(icon, size: (isTablet ? 36 : 24)),
                   ],
                   Text(
                     label,
-                    style: theme.textTheme.titleSmall?.copyWith(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: 0.5,
-                    ),
                   ),
                 ],
               ),
@@ -165,12 +152,13 @@ extension WidgetExtensions on BuildContext {
     required VoidCallback? onPressed,
     IconData? icon,
     double? height,
+    double? width,
   }) {
     final theme = Theme.of(this);
-    height = isTablet ? 62 : 48;
+    height = isTablet ? 62 : 44;
 
     return SizedBox(
-      width: double.infinity,
+      width: width ?? double.infinity,
       height: height,
       child: OutlinedButton(
         onPressed: onPressed,
@@ -214,10 +202,11 @@ extension WidgetExtensions on BuildContext {
     required VoidCallback? onPressed,
     IconData? icon,
     double? height,
+    double? width,
   }) {
-    height = isTablet ? 62 : 48;
+    height = isTablet ? 62 : 44;
     return SizedBox(
-      width: double.infinity,
+      width: width ?? double.infinity,
       height: height,
       child: ElevatedButton(
         onPressed: onPressed,
@@ -249,5 +238,37 @@ extension WidgetExtensions on BuildContext {
         ),
       ),
     );
+  }
+
+  /// Creates a themed button for tab switching or segmented control.
+  /// 
+  /// [isSelected] - Toggles between Elevated (selected) and Outlined (unselected) styles.
+  Widget themedTabButton({
+    required String label,
+    required bool isSelected,
+    required VoidCallback onPressed,
+  }) {
+    final theme = Theme.of(this);
+    final borderRadius = BorderRadius.circular(isTablet ? 36 : 24);
+
+    if (isSelected) {
+      return ElevatedButton(
+        onPressed: onPressed,
+        style: theme.elevatedButtonTheme.style?.copyWith(
+          padding: const WidgetStatePropertyAll(EdgeInsets.symmetric(vertical: 4)),
+          shape: WidgetStatePropertyAll(RoundedRectangleBorder(borderRadius: borderRadius)),
+        ),
+        child: Text(label),
+      );
+    } else {
+      return OutlinedButton(
+        onPressed: onPressed,
+        style: theme.outlinedButtonTheme.style?.copyWith(
+          padding: const WidgetStatePropertyAll(EdgeInsets.symmetric(vertical: 4)),
+          shape: WidgetStatePropertyAll(RoundedRectangleBorder(borderRadius: borderRadius)),
+        ),
+        child: Text(label),
+      );
+    }
   }
 }

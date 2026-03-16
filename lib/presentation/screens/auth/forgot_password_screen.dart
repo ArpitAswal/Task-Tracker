@@ -1,14 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:task_tracker/core/utils/extensions/context_extension.dart';
 import 'package:task_tracker/core/utils/message_utils.dart';
 import '../../../core/localization/app_localizations.dart';
 import '../../../core/routes/app_routes.dart';
 import '../../../core/utils/app_validators.dart';
 import '../../../core/utils/curved_clipper.dart';
 import '../../../core/constants/app_constants.dart';
+import '../../../core/utils/extensions/widget_extensions.dart';
 import '../../../core/utils/loading_overlay.dart';
 import '../../providers/auth_provider.dart';
-import '../../widgets/common/custom_button.dart';
 import '../../widgets/common/custom_text_form_fields.dart';
 
 class ForgotPasswordScreen extends StatefulWidget {
@@ -112,12 +113,13 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                           Align(
                             alignment: Alignment.topRight,
                             child: IconButton(
-                              icon: const Icon(Icons.close),
+                              icon: Icon(Icons.close,
+                              size: (context.isTablet) ? 36 : 24),
                               onPressed: _popBack,
                             ),
                           ),
 
-                          SizedBox(height: size.height * 0.02),
+                          SizedBox(height: size.width * 0.02),
 
                           // Title
                           Text(
@@ -135,27 +137,30 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                             textAlign: TextAlign.center,
                           ),
 
-                          SizedBox(height: size.height * 0.04),
+                          SizedBox(height: size.width * 0.04),
 
                           // Email Field
-                          EmailTextField(
-                            controller: _emailController,
-                            labelText: localization.email,
-                            textInputAction: TextInputAction.done,
-                            validator: (value) => Validators.validateEmail(
-                              value,
-                              errorMessage: localization.emailRequired,
+                          Padding(
+                            padding: EdgeInsets.symmetric(horizontal: (context.isTablet) ? 18 : 0),
+                            child: EmailTextField(
+                              controller: _emailController,
+                              labelText: localization.email,
+                              textInputAction: TextInputAction.done,
+                              validator: (value) => Validators.validateEmail(
+                                value,
+                                errorMessage: localization.emailRequired,
+                              ),
+                              onFieldSubmitted: (_) => {
+                                _formKey.currentState!.validate(),
+                              },
                             ),
-                            onFieldSubmitted: (_) => {
-                              _formKey.currentState!.validate(),
-                            },
                           ),
 
-                          SizedBox(height: size.height * 0.02),
+                          SizedBox(height: size.width * 0.04),
 
                           // Submit Button
-                          CustomButton(
-                            text: localization.submit,
+                          context.themedElevatedButton(
+                            label: localization.submit,
                             onPressed: _handleSubmit,
                             width: size.width * 0.4,
                           ),

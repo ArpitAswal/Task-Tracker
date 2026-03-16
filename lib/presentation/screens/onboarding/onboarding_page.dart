@@ -60,6 +60,7 @@ class OnboardingPage extends StatelessWidget {
                     softWrap: true,
                     style: theme.textTheme.headlineSmall?.copyWith(
                       fontWeight: FontWeight.w500,
+                      fontSize: 16
                     ),
                     textAlign: TextAlign.center,
                     maxLines: 8,

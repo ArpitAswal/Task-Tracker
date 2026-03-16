@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:task_tracker/core/localization/app_localizations.dart';
 
 import '../../../core/routes/app_routes.dart';
-import '../../widgets/common/custom_button.dart';
+import '../../../core/utils/extensions/widget_extensions.dart';
 
 class ExceptionScreen extends StatelessWidget {
   const ExceptionScreen({super.key});
@@ -36,11 +36,11 @@ class ExceptionScreen extends StatelessWidget {
                 '${loc?.translate('path') ?? 'Path'}: ${settings?.name ?? loc?.translate('unknown_path') ?? 'Unknown Path'}',
               ),
               const SizedBox(height: 24),
-              CustomButton(
+              context.themedElevatedButton(
                 onPressed: () => {
                   AppRoutes.navigateAndRemoveUntil(context, AppRoutes.login)
                 },
-                text: loc?.translate('goto_login') ??
+                label: loc?.translate('goto_login') ??
                 'Go to Login',
               ),
             ],

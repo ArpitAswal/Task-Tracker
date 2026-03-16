@@ -108,18 +108,23 @@ class _LoadingOverlayWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isTablet = screenWidth >= 600 && screenWidth < 900;
 
     return Material(
-      color: Colors.black.withOpacity(0.5), // Semi-transparent grey background
+      type: MaterialType.transparency,
       child: Center(
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
+          padding: EdgeInsets.symmetric(
+            horizontal: isTablet ? 48 : 32,
+            vertical: isTablet ? 36 : 24,
+          ),
           decoration: BoxDecoration(
             color: theme.scaffoldBackgroundColor,
             borderRadius: BorderRadius.circular(16),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.2),
+                color: Colors.black.withOpacity(isDark ? 0.5 : 0.2),
                 blurRadius: 10,
                 offset: const Offset(0, 4),
               ),
@@ -130,22 +135,22 @@ class _LoadingOverlayWidget extends StatelessWidget {
             children: [
               // Circular Progress Indicator
               SizedBox(
-                width: 40,
-                height: 40,
+                width: isTablet ? 60 : 40,
+                height: isTablet ? 60 : 40,
                 child: CircularProgressIndicator(
-                  strokeWidth: 3,
+                  strokeWidth: isTablet ? 4 : 3,
                   valueColor: AlwaysStoppedAnimation<Color>(
                     theme.colorScheme.primary,
                   ),
                 ),
               ),
 
-              const SizedBox(height: 16),
+              SizedBox(height: isTablet ? 24 : 16),
 
               // Loading text
               Text(
                 message ?? 'Loading...',
-                style: theme.textTheme.bodyLarge?.copyWith(
+                style: (isTablet ? theme.textTheme.titleMedium : theme.textTheme.bodyLarge)?.copyWith(
                   color: isDark
                       ? AppColors.darkTextPrimary
                       : AppColors.lightTextPrimary,

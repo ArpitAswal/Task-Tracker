@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:task_tracker/core/utils/extensions/context_extension.dart';
 import 'package:task_tracker/presentation/providers/task_provider.dart';
 import '../../../core/localization/app_localizations.dart';
 import '../../../core/routes/app_routes.dart';
@@ -7,10 +8,10 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/utils/app_validators.dart';
 import '../../../core/utils/curved_clipper.dart';
 import '../../../core/constants/app_constants.dart';
+import '../../../core/utils/extensions/widget_extensions.dart';
 import '../../../core/utils/loading_overlay.dart';
 import '../../../core/utils/message_utils.dart';
 import '../../providers/auth_provider.dart';
-import '../../widgets/common/custom_button.dart';
 import '../../widgets/common/custom_text_form_fields.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -77,26 +78,32 @@ class _LoginScreenState extends State<LoginScreen> {
     if (success) {
       // ✨ Use context extensions
       context.showSuccessToast('login_success');
-      if(context.read<AuthProvider>().isEmailVerify) {
+      if (context.read<AuthProvider>().isEmailVerify) {
         AppRoutes.navigateAndRemoveUntil(context, AppRoutes.home);
-      } else{
-        AppRoutes.navigateTo(context, AppRoutes.emailVerify, arguments: {'fromLogin' : true});
+      } else {
+        AppRoutes.navigateTo(
+          context,
+          AppRoutes.emailVerify,
+          arguments: {'fromLogin': true},
+        );
       }
     } else {
       // ✨ Use MessageUtils
-      debugPrint(
-        "✨AppError:---> ${context.read<AuthProvider>().errorMessage}",
-      );
-      if(context.read<AuthProvider>().errorMessage != null && context.read<AuthProvider>().errorMessage!.contains("user-profile-error")){
+      debugPrint("✨AppError:---> ${context.read<AuthProvider>().errorMessage}");
+      if (context.read<AuthProvider>().errorMessage != null &&
+          context.read<AuthProvider>().errorMessage!.contains(
+            "user-profile-error",
+          )) {
         AppRoutes.navigateAndRemoveUntil(context, AppRoutes.profile);
       } else {
         context.showErrorToast(
-            (context.read<AuthProvider>().errorMessage != null &&
-                context.read<AuthProvider>().errorMessage!.contains('cloud_firestore/unavailable'))
-            ? 'cloud_firestore/unavailable' :
-          context
-              .read<AuthProvider>()
-              .errorMessage ?? 'login_failed_no_user',
+          (context.read<AuthProvider>().errorMessage != null &&
+                  context.read<AuthProvider>().errorMessage!.contains(
+                    'cloud_firestore/unavailable',
+                  ))
+              ? 'cloud_firestore/unavailable'
+              : context.read<AuthProvider>().errorMessage ??
+                    'login_failed_no_user',
         );
       }
     }
@@ -130,7 +137,9 @@ class _LoginScreenState extends State<LoginScreen> {
                   children: [
                     Expanded(
                       child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                        padding: EdgeInsets.symmetric(
+                          horizontal: (context.isTablet) ? 48 : 24.0,
+                        ),
                         child: Form(
                           key: _formKey,
                           child: Column(
@@ -140,7 +149,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               // Title
                               Text(
                                 localization.loginTitle,
-                                style: theme.textTheme.displaySmall,
+                                style: theme.textTheme.displayMedium,
                               ),
 
                               const SizedBox(height: 8),
@@ -148,21 +157,42 @@ class _LoginScreenState extends State<LoginScreen> {
                               // Subtitle
                               Padding(
                                 padding: const EdgeInsets.symmetric(
-                                  horizontal: 32.0,
+                                  horizontal: 36.0,
                                 ),
                                 child: RichText(
                                   textAlign: TextAlign.center,
                                   text: TextSpan(
                                     text: localization.loginSubtitle,
-                                    style: theme.textTheme.bodyMedium,
+                                    style: (context.isTablet)
+                                        ? theme.textTheme.titleLarge?.copyWith(
+                                            color: theme
+                                                .textTheme
+                                                .bodySmall
+                                                ?.color,
+                                            fontWeight: theme
+                                                .textTheme
+                                                .bodySmall
+                                                ?.fontWeight,
+                                          )
+                                        : theme.textTheme.bodySmall,
                                     children: [
                                       TextSpan(
                                         text: ' ${localization.termsPrivacy}',
-                                        style: theme.textTheme.bodyMedium
-                                            ?.copyWith(
-                                              fontWeight: FontWeight.bold,
-                                              color: theme.colorScheme.primary,
-                                            ),
+                                        style: (context.isTablet)
+                                            ? theme.textTheme.titleLarge
+                                                  ?.copyWith(
+                                                    fontWeight: FontWeight.bold,
+                                                    color: theme
+                                                        .colorScheme
+                                                        .primary,
+                                                  )
+                                            : theme.textTheme.bodySmall
+                                                  ?.copyWith(
+                                                    fontWeight: FontWeight.bold,
+                                                    color: theme
+                                                        .colorScheme
+                                                        .primary,
+                                                  ),
                                       ),
                                     ],
                                   ),
@@ -204,8 +234,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                 },
                               ),
 
-                              const SizedBox(height: 6),
-
+                              SizedBox(height: (context.isTablet ? 6 : 0)),
                               // Remember Me & Forgot Password
                               Row(
                                 mainAxisAlignment:
@@ -218,17 +247,60 @@ class _LoginScreenState extends State<LoginScreen> {
                                       Consumer<AuthProvider>(
                                         // toggle remember me and update checkbox UI
                                         builder: (context, authProvider, _) {
-                                          return Checkbox(
-                                            value: authProvider.isRememberMe,
-                                            onChanged: (_) {
-                                              authProvider.toggleRememberMe();
-                                            },
+                                          return Transform.scale(
+                                            scale: (context.isTablet) ? 1.5 : 1,
+                                            child: Checkbox(
+                                              // This shrinks the hit area to the size of the box itself
+                                              materialTapTargetSize:
+                                                  MaterialTapTargetSize
+                                                      .shrinkWrap,
+                                              // This removes extra padding around the checkbox
+                                              visualDensity:
+                                                  VisualDensity.compact,
+                                              fillColor:
+                                                  WidgetStateProperty.resolveWith((
+                                                    states,
+                                                  ) {
+                                                    if (states.contains(
+                                                      WidgetState.selected,
+                                                    )) {
+                                                      return (context
+                                                              .isDarkMode)
+                                                          ? AppColors
+                                                                .primaryDarkColor
+                                                          : AppColors
+                                                                .primaryLightColor;
+                                                    }
+                                                    return (context.isDarkMode)
+                                                        ? AppColors.black
+                                                        : AppColors.white;
+                                                  }),
+                                              checkColor: (context.isDarkMode)
+                                                  ? AppColors.black
+                                                  : AppColors.white,
+                                              side: BorderSide(
+                                                width: 2,
+                                                color: (context.isDarkMode)
+                                                    ? AppColors.primaryDarkColor
+                                                    : AppColors
+                                                          .primaryLightColor,
+                                              ),
+                                              value: authProvider.isRememberMe,
+                                              onChanged: (_) {
+                                                authProvider.toggleRememberMe();
+                                              },
+                                            ),
                                           );
                                         },
                                       ),
+                                      SizedBox(
+                                        width: (context.isTablet ? 8 : 0),
+                                      ),
                                       Text(
                                         localization.rememberMe,
-                                        style: theme.textTheme.bodyMedium,
+                                        style: (context.isTablet)
+                                            ? theme.textTheme.bodyMedium
+                                            : theme.textTheme.bodyLarge,
                                       ),
                                     ],
                                   ),
@@ -237,15 +309,22 @@ class _LoginScreenState extends State<LoginScreen> {
                                     onPressed: _navigateToForgotPassword,
                                     child: Text(
                                       localization.forgotPassword,
-                                      style: theme.textTheme.bodyMedium
-                                          ?.copyWith(
-                                            fontWeight: FontWeight.w600,
-                                            color:
-                                                theme.brightness ==
-                                                    Brightness.dark
-                                                ? AppColors.primaryDarkColor
-                                                : AppColors.primaryLightColor,
-                                          ),
+                                      style: (context.isTablet)
+                                          ? theme.textTheme.bodyMedium
+                                                ?.copyWith(
+                                                  fontWeight: FontWeight.w600,
+                                                  color: context
+                                                      .theme
+                                                      .colorScheme
+                                                      .primary,
+                                                )
+                                          : theme.textTheme.bodyLarge?.copyWith(
+                                              color: context
+                                                  .theme
+                                                  .colorScheme
+                                                  .primary,
+                                              fontWeight: FontWeight.w600,
+                                            ),
                                     ),
                                   ),
                                 ],
@@ -254,8 +333,8 @@ class _LoginScreenState extends State<LoginScreen> {
                               const SizedBox(height: 24),
 
                               // Login Button
-                              CustomButton(
-                                text: localization.login,
+                              context.themedElevatedButton(
+                                label: localization.login,
                                 onPressed: _handleLogin,
                               ),
 
@@ -266,7 +345,9 @@ class _LoginScreenState extends State<LoginScreen> {
                                 children: [
                                   Text(
                                     localization.dontHaveAccount,
-                                    style: theme.textTheme.bodyMedium,
+                                    style: (context.isTablet)
+                                        ? theme.textTheme.bodyMedium
+                                        : theme.textTheme.bodyLarge,
                                   ),
                                   const SizedBox(width: 4),
                                   TextButton(
@@ -278,6 +359,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                         decoration: TextDecoration.underline,
                                         decorationColor:
                                             theme.colorScheme.primary,
+                                        fontSize: (context.isTablet) ? 16 : 18,
                                       ),
                                     ),
                                   ),

@@ -5,6 +5,7 @@ import 'package:task_tracker/core/utils/extensions/context_extension.dart';
 import 'package:task_tracker/presentation/screens/task/widgets/tasklist_widget.dart';
 import 'package:task_tracker/presentation/widgets/common/custom_shimmer_widget.dart';
 
+import '../../../core/utils/extensions/widget_extensions.dart';
 import '../../providers/task_provider.dart';
 
 class TaskTabView extends StatefulWidget {
@@ -31,80 +32,24 @@ class _TaskTabViewState extends State<TaskTabView> {
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
                     Expanded(
-                      child: ElevatedButton(
+                      child: context.themedTabButton(
+                        label: loc?.translate('pending') ?? '',
+                        isSelected: provider.tabviewIndex == 0,
                         onPressed: () {
                           widget.tabController.animateTo(0);
                           provider.setTabViewIndex(0);
                         },
-                        style: (provider.tabviewIndex == 0)
-                            ? Theme.of(
-                                context,
-                              ).elevatedButtonTheme.style?.copyWith(
-                                padding: const WidgetStatePropertyAll(
-                                  EdgeInsets.symmetric(vertical: 4),
-                                ),
-                                shape: WidgetStatePropertyAll(
-                                  RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(
-                                      context.isTablet ? 36 : 24,
-                                    ),
-                                  ),
-                                ),
-                              )
-                            : Theme.of(
-                                context,
-                              ).outlinedButtonTheme.style?.copyWith(
-                                padding: const WidgetStatePropertyAll(
-                                  EdgeInsets.symmetric(vertical: 4),
-                                ),
-                                shape: WidgetStatePropertyAll(
-                                  RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(
-                                      context.isTablet ? 36 : 24,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                        child: Text(loc?.translate('pending') ?? ''),
                       ),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
-                      child: ElevatedButton(
+                      child: context.themedTabButton(
+                        label: loc?.translate('completed') ?? '',
+                        isSelected: provider.tabviewIndex == 1,
                         onPressed: () {
                           provider.setTabViewIndex(1);
                           widget.tabController.animateTo(1);
                         },
-                        style: (provider.tabviewIndex == 1)
-                            ? Theme.of(
-                                context,
-                              ).elevatedButtonTheme.style?.copyWith(
-                                padding: const WidgetStatePropertyAll(
-                                  EdgeInsets.symmetric(vertical: 4),
-                                ),
-                                shape: WidgetStatePropertyAll(
-                                  RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(
-                                      context.isTablet ? 36 : 24,
-                                    ),
-                                  ),
-                                ),
-                              )
-                            : Theme.of(
-                                context,
-                              ).outlinedButtonTheme.style?.copyWith(
-                                padding: const WidgetStatePropertyAll(
-                                  EdgeInsets.symmetric(vertical: 4),
-                                ),
-                                shape: WidgetStatePropertyAll(
-                                  RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(
-                                      context.isTablet ? 36 : 24,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                        child: Text(loc?.translate('completed') ?? ''),
                       ),
                     ),
                   ],
