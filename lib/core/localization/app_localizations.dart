@@ -182,6 +182,8 @@ class AppLocalizations {
       'leaderboard': 'Leaderboard',
       'error_loading_leaderboard': 'Error loading leaderboard',
       'no_users_found': 'No users found.',
+      'index_not_exist': 'The searching ranks range does not exist',
+      'invalid_search_rank': 'Invalid search rank indices.',
 
       // Settings
       'settings': 'Settings',
@@ -224,6 +226,7 @@ class AppLocalizations {
       'invalid-credential': 'Invalid credentials provided',
       'network-request-failed': 'Network error. Please check your connection',
       'authentication-error': 'Authentication error occurred',
+      'cloud_firestore/unavailable': 'The service is currently unavailable. This is a most likely a transient condition and may be corrected by retrying with a backoff.',
 
       // Throws Exceptions
       'login_failed_no_user': 'Login failed: No user returned',
@@ -473,6 +476,8 @@ class AppLocalizations {
       'leaderboard': 'लीडरबोर्ड',
       'error_loading_leaderboard': 'लीडरबोर्ड लोड करने में त्रुटि',
       'no_users_found': 'कोई उपयोगकर्ता नहीं मिला.',
+      'index_not_exist': 'खोज रैंक सीमा मौजूद नहीं है',
+      'invalid_search_rank': 'अमान्य खोज रैंक सूचकांक।',
 
       // Settings
       'settings': 'सेटिंग्स',
@@ -518,6 +523,7 @@ class AppLocalizations {
       'network-request-failed':
           'नेटवर्क में गड़बड़ी। कृपया अपना कनेक्शन जांचें।',
       'authentication-error': 'प्रमाणीकरण त्रुटि हुई',
+      'cloud_firestore/unavailable': 'यह सेवा फिलहाल अनुपलब्ध है। यह संभवतः एक अस्थायी समस्या है और बैकऑफ़ के साथ पुनः प्रयास करने पर ठीक हो सकती है।',
 
       // Throws Exceptions
       'login_failed_no_user': 'लॉगिन विफल: कोई उपयोगकर्ता नहीं मिला',

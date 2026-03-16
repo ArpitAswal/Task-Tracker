@@ -1,4 +1,6 @@
 import 'dart:async';
+import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -74,7 +76,7 @@ class AuthProvider with ChangeNotifier {
     return await _authRepository.getSavedCredentials();
   }
 
-  Future<Locale?> getLanguage() async{
+  Future<Locale?> getLanguage() async {
     final prefs = await SharedPreferences.getInstance();
     final savedLocale = prefs.getString(StorageKeys.locale);
 
@@ -107,9 +109,68 @@ class AuthProvider with ChangeNotifier {
   // LEADERBOARD METHODS
   // ============================================================================
 
-  /// Stream of all users used for the realtime leaderboard
-  Stream<List<UserModel>> getAllUsersStream() {
-    return _authRepository.getAllUsersStream();
+  int _leaderboardItemsToShow = 10;
+  List<UserModel> _leaderboardUsers = [];
+  StreamSubscription? _leaderboardSub;
+
+  // Cache of decoded images
+  // Key is uid, value is a map entry of the photoUrl (to check if changed) and the decoded bytes.
+  final Map<String, MapEntry<String, Uint8List>> _decodedPhotoCache = {};
+
+  bool _isLeaderboardLoading = true;
+
+  int get leaderboardItemsToShow => _leaderboardItemsToShow;
+  List<UserModel> get leaderboardUsers => _leaderboardUsers;
+  bool get isLeaderboardLoading => _isLeaderboardLoading;
+
+  void initLeaderboardStream() {
+    _leaderboardItemsToShow = 10;
+    _isLeaderboardLoading = true;
+    notifyListeners();
+
+    _leaderboardSub?.cancel();
+    _leaderboardSub = _authRepository.getAllUsersStream().listen(
+      (users) {
+        _leaderboardUsers = users;
+        _isLeaderboardLoading = false;
+        notifyListeners();
+      },
+      onError: (e) {
+        _isLeaderboardLoading = false;
+        notifyListeners();
+      },
+    );
+  }
+
+  void loadMoreLeaderboardUsers() {
+    _leaderboardItemsToShow += 10;
+    notifyListeners();
+  }
+
+  Uint8List? getDecodedPhoto(UserModel user) {
+    if (user.photoUrl == null || user.photoUrl!.isEmpty) return null;
+
+    // If the cache contains the uid and the photo base64 string matches the cached one, return it.
+    if (_decodedPhotoCache.containsKey(user.uid) &&
+        _decodedPhotoCache[user.uid]?.key == user.photoUrl) {
+      return _decodedPhotoCache[user.uid]?.value;
+    }
+
+    // Otherwise, decode the new photoUrl and update the cache.
+    try {
+      final bytes = base64Decode(user.photoUrl!);
+      _decodedPhotoCache[user.uid] = MapEntry(user.photoUrl!, bytes);
+      return bytes;
+    } catch (e) {
+      debugPrint("Error decoding photo for ${user.uid}: $e");
+      return null;
+    }
+  }
+
+  @override
+  void dispose() {
+    _leaderboardSub?.cancel();
+    super.dispose();
   }
 
   // Login
@@ -166,7 +227,7 @@ class AuthProvider with ChangeNotifier {
     } catch (e) {
       _setError(e.toString());
       return false;
-    } finally{
+    } finally {
       _setLoading(false);
       notifyListeners();
     }
@@ -229,7 +290,6 @@ class AuthProvider with ChangeNotifier {
     int? age,
     String? location,
   }) async {
-
     _setLoading(true);
     _clearError();
 
@@ -246,7 +306,7 @@ class AuthProvider with ChangeNotifier {
         'gender': gender,
         'age': age,
         'location': location,
-        'updateAt': DateTime.now()
+        'updateAt': DateTime.now(),
       };
 
       // Only include photoUrl if provided
@@ -298,7 +358,11 @@ class AuthProvider with ChangeNotifier {
     int newLongest = _userData!.longestStreak;
 
     if (lastActive != null) {
-      final lastDate = DateTime(lastActive.year, lastActive.month, lastActive.day);
+      final lastDate = DateTime(
+        lastActive.year,
+        lastActive.month,
+        lastActive.day,
+      );
       final diff = today.difference(lastDate).inDays;
 
       if (diff == 0) {
@@ -348,16 +412,10 @@ class AuthProvider with ChangeNotifier {
     try {
       await _authRepository.updateUserProfileData(
         uid: _userData!.uid,
-        data: {
-          'currentStreak': 0,
-          'lastActiveDate': null,
-        },
+        data: {'currentStreak': 0, 'lastActiveDate': null},
       );
 
-      _userData = _userData!.copyWith(
-        currentStreak: 0,
-        lastActiveDate: null,
-      );
+      _userData = _userData!.copyWith(currentStreak: 0, lastActiveDate: null);
       notifyListeners();
     } catch (e) {
       debugPrint('Failed to reset streak: $e');
@@ -365,24 +423,29 @@ class AuthProvider with ChangeNotifier {
   }
 
   /// Decrement streak by 1 if the very last active task for today is marked incomplete
-  Future<void> decrementStreakIfNoOtherTasksToday(bool hasOtherCompletedTasksToday) async {
+  Future<void> decrementStreakIfNoOtherTasksToday(
+    bool hasOtherCompletedTasksToday,
+  ) async {
     if (_userData == null) return;
-    
+
     // If the user still has other tasks completed today, their streak for today remains active.
     if (hasOtherCompletedTasksToday) return;
 
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
-    
-    if (_userData!.lastActiveDate != null && 
-        _userData!.lastActiveDate!.year == today.year && 
-        _userData!.lastActiveDate!.month == today.month && 
+
+    if (_userData!.lastActiveDate != null &&
+        _userData!.lastActiveDate!.year == today.year &&
+        _userData!.lastActiveDate!.month == today.month &&
         _userData!.lastActiveDate!.day == today.day) {
-        
-      // They just reversed the only task completed today. We decrement currentStreak by 1 
+      // They just reversed the only task completed today. We decrement currentStreak by 1
       // and set lastActiveDate to yesterday (meaning they maintained it until yesterday).
-      int newStreak = _userData!.currentStreak > 0 ? _userData!.currentStreak - 1 : 0;
-      DateTime? newLastActiveDate = newStreak > 0 ? today.subtract(const Duration(days: 1)) : null;
+      int newStreak = _userData!.currentStreak > 0
+          ? _userData!.currentStreak - 1
+          : 0;
+      DateTime? newLastActiveDate = newStreak > 0
+          ? today.subtract(const Duration(days: 1))
+          : null;
 
       try {
         await _authRepository.updateUserProfileData(

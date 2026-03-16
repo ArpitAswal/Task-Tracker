@@ -369,7 +369,7 @@ class _PriorityDropdown extends StatelessWidget {
     return DropdownButtonFormField<TaskPriority>(
       initialValue: value,
       decoration: InputDecoration(labelText: l10n.priority),
-      dropdownColor: context.theme.colorScheme.secondary,
+      dropdownColor: context.theme.cardTheme.color,
       isDense: true,
       isExpanded: true,
       items: TaskPriority.values.map((p) {
@@ -421,7 +421,7 @@ class _CategoryDropdown extends StatelessWidget {
     return DropdownButtonFormField<TaskCategory>(
       initialValue: value,
       decoration: InputDecoration(labelText: l10n.category),
-      dropdownColor: context.theme.colorScheme.secondary,
+      dropdownColor: context.theme.cardTheme.color,
       isDense: true,
       isExpanded: true,
       items: TaskCategory.values.map((c) {

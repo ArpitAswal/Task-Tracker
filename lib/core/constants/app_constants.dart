@@ -25,9 +25,6 @@ class AppConstants {
   static const String notificationChannelDescription =
       'Notifications for task reminders';
 
-  // WorkManager
-  static const String taskReminderWork = 'taskReminderWork';
-  static const String uniqueWorkName = 'periodicTaskReminder';
 
   // Hive Box Names
   static const String userBox = 'user_box';

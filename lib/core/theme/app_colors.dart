@@ -5,12 +5,10 @@ class AppColors {
 
   static const Color primaryLightColor = Color(0xFF2196F3);
   static const Color accentLightColor = Color(0xFF69C4FA);
-  static const Color secondaryLightColor = Color(0xFF121212);
 
   // Dark Text Colors
   static const Color primaryDarkColor = Color(0xFF2196F3);
   static const Color accentDarkColor = Color(0xFF0F88BD);
-  static const Color secondaryDarkColor = Color(0xFFF5F5F5);
 
   // Background Colors
   static const Color lightBackground = Color(0xFFFFFFFF);

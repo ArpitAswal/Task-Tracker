@@ -91,6 +91,9 @@ class _LoginScreenState extends State<LoginScreen> {
         AppRoutes.navigateAndRemoveUntil(context, AppRoutes.profile);
       } else {
         context.showErrorToast(
+            (context.read<AuthProvider>().errorMessage != null &&
+                context.read<AuthProvider>().errorMessage!.contains('cloud_firestore/unavailable'))
+            ? 'cloud_firestore/unavailable' :
           context
               .read<AuthProvider>()
               .errorMessage ?? 'login_failed_no_user',

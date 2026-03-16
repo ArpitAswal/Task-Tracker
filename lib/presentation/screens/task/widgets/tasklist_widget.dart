@@ -29,6 +29,7 @@ Widget buildTaskList(
 
   return ListView.builder(
     itemCount: tasks.length,
+    padding: EdgeInsets.symmetric(horizontal: (context.isTablet) ? 24 : 16),
     itemBuilder: (context, index) {
       return buildTaskCard(tasks[index], context);
     },

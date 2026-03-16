@@ -19,43 +19,51 @@ import '../theme/app_colors.dart';
 /// );
 /// ```
 class LoadingOverlay {
-  // Keep track of overlay entry to remove it later
-  static OverlayEntry? _overlayEntry;
   static bool _isShowing = false;
+  static BuildContext? _dialogContext;
 
   /// Show the loading overlay
   ///
-  /// [overlay] - OverlayState to insert the loading widget into
+  /// [context] - BuildContext to show the dialog
   /// [message] - Optional loading message (default: "Loading...")
-  static void show(OverlayState overlay, {String? message}) {
+  static void show(BuildContext context, {String? message}) {
     // Prevent showing multiple overlays
     if (_isShowing) return;
 
     _isShowing = true;
 
-    // Create overlay entry
-    _overlayEntry = OverlayEntry(
-      builder: (context) => _LoadingOverlayWidget(message: message),
-    );
-
-    // Insert overlay into the overlay stack
-    overlay.insert(_overlayEntry!);
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      useRootNavigator: true,
+      barrierColor: Colors.black.withOpacity(0.5),
+      builder: (BuildContext ctx) {
+        _dialogContext = ctx;
+        return PopScope(
+          // Prevent back button / swipe to close
+          canPop: false,
+          child: _LoadingOverlayWidget(message: message),
+        );
+      },
+    ).then((_) {
+      _isShowing = false;
+      _dialogContext = null;
+    });
   }
 
   /// Hide the loading overlay
-  ///
-  /// No context needed — the entry removes itself from whichever overlay it
-  /// was inserted into.
   static void hide() {
-    if (!_isShowing || _overlayEntry == null) return;
+    if (!_isShowing || _dialogContext == null) return;
 
     try {
-      _overlayEntry?.remove();
+      if (Navigator.of(_dialogContext!).canPop()) {
+        Navigator.of(_dialogContext!).pop();
+      }
     } catch (_) {
-      // Overlay may already be disposed (e.g. context unmounted); ignore.
+      // ignore
     }
-    _overlayEntry = null;
     _isShowing = false;
+    _dialogContext = null;
   }
 
   /// Wrap an async operation with loading overlay
@@ -77,7 +85,7 @@ class LoadingOverlay {
     String? message,
   }) async {
     try {
-      show(Overlay.of(context), message: message);
+      show(context, message: message);
       final result = await future;
       return result;
     } finally {
@@ -157,7 +165,7 @@ class _LoadingOverlayWidget extends StatelessWidget {
 extension LoadingOverlayExtension on BuildContext {
   /// Show loading overlay
   void showLoading({String? message}) {
-    LoadingOverlay.show(Overlay.of(this), message: message);
+    LoadingOverlay.show(this, message: message);
   }
 
   /// Hide loading overlay
@@ -166,14 +174,7 @@ extension LoadingOverlayExtension on BuildContext {
   }
 
   /// Wrap future with loading
-  Future<T> withLoading<T>({
-    required Future<T> future,
-    String? message,
-  }) {
-    return LoadingOverlay.wrap(
-      context: this,
-      future: future,
-      message: message,
-    );
+  Future<T> withLoading<T>({required Future<T> future, String? message}) {
+    return LoadingOverlay.wrap(context: this, future: future, message: message);
   }
 }

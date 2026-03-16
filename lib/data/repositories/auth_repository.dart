@@ -90,8 +90,10 @@ class AuthRepository {
       // Get user data from Firestore
       return await getUserData(userCredential.user!.uid);
     } on FirebaseAuthException catch (e) {
+      print("firebase exception -> $e and code: ${e.code}");
       throw e.code;
     } catch (e) {
+      print("catch exception -> ${e.toString()}");
       rethrow;
     }
   }

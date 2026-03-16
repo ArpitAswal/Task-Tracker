@@ -113,8 +113,12 @@ class AppTheme {
         }
         return AppColors.white;
       }),
+      side: const BorderSide(
+        color: Colors.white,
+        width: 1.5
+      ),
       checkColor: WidgetStateProperty.all(AppColors.white),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
     ),
 
     // Icon Theme
@@ -234,10 +238,14 @@ class AppTheme {
         if (states.contains(WidgetState.selected)) {
           return AppColors.primaryLightColor;
         }
-        return AppColors.darkSurface;
+        return AppColors.black;
       }),
+      side: const BorderSide(
+          color: AppColors.primaryLightColor,
+          width: 1.5
+      ),
       checkColor: WidgetStateProperty.all(AppColors.black),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
     ),
 
     // Icon Theme

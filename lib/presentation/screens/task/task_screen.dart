@@ -26,7 +26,7 @@ class _TaskTabViewState extends State<TaskTabView> {
           Consumer<TaskProvider>(
             builder: (_, provider, _) {
               return Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
+                padding: EdgeInsets.symmetric(horizontal: (context.isTablet) ? 24 : 16),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [

@@ -14,7 +14,7 @@ import '../../../providers/task_provider.dart';
 
 Widget buildTaskCard(TaskModel task, BuildContext context) {
   final theme = Theme.of(context);
-  final isOverdue = task.endDate.day <= DateTime.now().day && !task.isCompleted && task.createdAt.day != DateTime.now().day ;
+  final isOverdue = task.endDate.day < DateTime.now().day && !task.isCompleted;
   final hasDescription = (task.description?.trim().isNotEmpty ?? false);
   final priorityColor = task.priorityColor;
   final categoryColor = task.categoryColor;
@@ -53,7 +53,7 @@ Widget buildTaskCard(TaskModel task, BuildContext context) {
       : AppColors.info;
 
   return Padding(
-    padding: const EdgeInsets.symmetric(horizontal: 16).copyWith(top: 24),
+    padding: const EdgeInsets.only(top: 24),
     child: Slidable(
       key: ValueKey(task.id),
       startActionPane: (task.isCompleted)
@@ -119,7 +119,6 @@ Widget buildTaskCard(TaskModel task, BuildContext context) {
         ),
         child: LayoutBuilder(
           builder: (context, constraints) {
-            final compact = constraints.maxWidth < 360;
             return Material(
               color: theme.scaffoldBackgroundColor,
               borderRadius: BorderRadius.circular(21),
@@ -137,21 +136,13 @@ Widget buildTaskCard(TaskModel task, BuildContext context) {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.start,
+                      crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
-                        SizedBox(
-                          width: 32,
-                          height: 32,
+                        Transform.scale(
+                          scale: 1.5,
                           child: Checkbox(
                             value: task.isCompleted,
-                            side: const BorderSide(
-                              width: 1.5,
-                              color: AppColors.white,
-                            ),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(6),
-                            ),
-                            autofocus: true,
                             onChanged: (bool? value) {
                               if (value != null) {
                                 _taskCompleteConfirmation(context, task);
@@ -247,7 +238,7 @@ Widget buildTaskCard(TaskModel task, BuildContext context) {
                       const SizedBox(height: 2),
                       Text(
                         task.description!.trim(),
-                        maxLines: compact ? 1 : 2,
+                        maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                         style: theme.textTheme.bodyLarge?.copyWith(
                           fontWeight: FontWeight.w500,
@@ -347,7 +338,6 @@ Future<void> _showDeleteConfirmation(
   /// because the Slidable's context will be unmounted after the dialog closes.
   final loc = AppLocalizations.of(context);
   final provider = context.read<TaskProvider>();
-  final overlay = Overlay.of(context);
   final successMsg =
       loc?.translate('task_delete') ?? 'Task Deleted Successfully';
 
@@ -361,14 +351,17 @@ Future<void> _showDeleteConfirmation(
   if (confirmed == true) {
     try {
       LoadingOverlay.show(
-        overlay,
+        context,
         message: loc?.translate('deleting_task') ?? '',
       );
       final success = await provider.deleteTask(task.id);
       LoadingOverlay.hide();
 
       if (success) {
-        MessageUtils.showSuccessToastWithOverlay(overlay, successMsg);
+        MessageUtils.showSuccessToastWithOverlay(
+          Overlay.of(context),
+          successMsg,
+        );
       }
     } catch (_) {
       LoadingOverlay.hide();
@@ -384,7 +377,6 @@ Future<void> _taskCompleteConfirmation(
   /// because the Slidable's context will be unmounted after the dialog closes.
   final loc = AppLocalizations.of(context);
   final provider = context.read<TaskProvider>();
-  final overlay = Overlay.of(context);
   final successMsg = (task.isCompleted == false)
       ? loc?.translate('task_complete') ?? 'Task Completed Successfully'
       : loc?.translate('task_incomplete') ?? 'Task was Incomplete';
@@ -403,14 +395,14 @@ Future<void> _taskCompleteConfirmation(
   if (confirmed == true) {
     try {
       LoadingOverlay.show(
-        overlay,
+        context,
         message: (task.isCompleted == false)
             ? loc?.translate('completing_task') ?? ''
             : loc?.translate('in_completing_task') ?? '',
       );
       await provider.toggleTaskStatus(task.id);
       LoadingOverlay.hide();
-      MessageUtils.showSuccessToastWithOverlay(overlay, successMsg);
+      MessageUtils.showSuccessToastWithOverlay(Overlay.of(context), successMsg);
     } catch (_) {
       LoadingOverlay.hide();
     }
