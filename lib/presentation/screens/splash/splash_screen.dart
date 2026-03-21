@@ -3,6 +3,7 @@ import 'package:animated_splash_screen/animated_splash_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:lottie/lottie.dart';
 import 'package:provider/provider.dart';
+import 'package:task_tracker/core/utils/extensions/context_extension.dart';
 
 import '../../../core/constants/app_constants.dart';
 import '../../../core/services/storage_service.dart';
@@ -59,6 +60,7 @@ class SplashScreen extends StatelessWidget {
               repeat: true,
               reverse: true,
               options: LottieOptions(enableMergePaths: true),
+              height: context.screenHeight * (context.isTablet ? 0.5 : 0.3)
             ),
           ),
           // Your App Name

@@ -661,6 +661,7 @@ class TaskProvider with ChangeNotifier {
     _errorMessage = null;
     _userId = null;
     _currentFilter = TaskFilter.all;
+    _drawerIndex.value = 0;
     NotificationService.cancelAllReminders();
     notifyListeners();
   }

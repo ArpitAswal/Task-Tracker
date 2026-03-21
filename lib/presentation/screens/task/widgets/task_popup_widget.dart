@@ -657,7 +657,7 @@ class _FooterButtons extends StatelessWidget {
         ),
         const SizedBox(width: 8),
         Expanded(
-          child: context.themedElevatedButton(
+          child: context.themedOutlinedButton(
             label: confirmLabel,
             onPressed: onSubmit,
           ),

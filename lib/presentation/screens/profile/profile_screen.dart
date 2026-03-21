@@ -133,6 +133,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   icon: Icons.logout_rounded,
                   onPressed: () {
                     _authProvider.logout();
+                    context.read<TaskProvider>().reset();
                     AppRoutes.navigateAndRemoveUntil(context, AppRoutes.login);
                   },
                 ),

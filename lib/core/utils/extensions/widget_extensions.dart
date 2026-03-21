@@ -119,9 +119,7 @@ extension WidgetExtensions on BuildContext {
       height: height,
       child: ElevatedButton(
         onPressed: isLoading ? null : onPressed,
-        style: theme.elevatedButtonTheme.style?.copyWith(
-          shape: WidgetStatePropertyAll(RoundedRectangleBorder(borderRadius: BorderRadiusGeometry.circular(14)))
-        ),
+        style: theme.elevatedButtonTheme.style,
         child: isLoading
             ? const SizedBox(
                 width: 24,

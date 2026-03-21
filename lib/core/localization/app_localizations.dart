@@ -289,6 +289,8 @@ class AppLocalizations {
       'days_streak': 'days',
       'start_rank': 'Start Rank',
       'end_rank': 'End Rank',
+      'exit_app_title': 'Exit App',
+      'exit_app_msg': 'Are you sure you want to exit?',
 
       // Screens Name
       'task_screen': "Task Tracker",
@@ -586,6 +588,8 @@ class AppLocalizations {
       'longest_streak': 'सबसे लंबी स्ट्रीक',
       'day_streak': 'दिन',
       'days_streak': 'दिन',
+      'exit_app_title': 'ऐप से बाहर निकलें',
+      'exit_app_msg': 'क्या आप वाकई बाहर निकलना चाहते हैं?',
 
       // Screens Name
       'task_screen': "कार्य ट्रैकर",

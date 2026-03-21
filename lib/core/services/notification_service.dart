@@ -33,7 +33,6 @@ class NotificationService {
     _timezone = await FlutterTimezone.getLocalTimezone();
     _availableTimezones = await FlutterTimezone.getAvailableTimezones();
     _availableTimezones.sort((a, b) => a.identifier.compareTo(b.identifier));
-    print("availableTimeZones:  -> ${_availableTimezones.toList()}");
     tz.setLocalLocation(tz.getLocation(_timezone?.identifier ?? 'Unknown'));
 
     // Android init settings

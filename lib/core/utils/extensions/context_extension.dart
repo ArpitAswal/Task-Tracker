@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../localization/app_localizations.dart';
+
 /// ✨ NEW: Extension methods for BuildContext to simplify common operations
 ///
 /// Provides convenient access to:
@@ -151,7 +153,7 @@ extension ContextExtensions on BuildContext {
                   onPressed: () => Navigator.of(context).pop(false),
                   style: TextButton.styleFrom(
                     foregroundColor: currentTheme.colorScheme.onSurface
-                        .withOpacity(0.6),
+                        .withValues(alpha: 0.6),
                   ),
                   child: Text(cancelText),
                 ),
@@ -176,25 +178,6 @@ extension ContextExtensions on BuildContext {
     );
   }
 
-  /// Show bottom sheet
-  Future<T?> showBottomSheetModal<T>({
-    required Widget child,
-    bool isDismissible = true,
-    bool enableDrag = true,
-  }) {
-    return showModalBottomSheet<T>(
-      context: this,
-      isDismissible: isDismissible,
-      enableDrag: enableDrag,
-      isScrollControlled: true,
-      constraints: const BoxConstraints(maxWidth: double.infinity),
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (_) => child,
-    );
-  }
-
   // ============================================================================
   // SCAFFOLD MESSENGER (For SnackBars)
   // ============================================================================
@@ -216,4 +199,15 @@ extension ContextExtensions on BuildContext {
   void clearSnackBars() {
     ScaffoldMessenger.of(this).clearSnackBars();
   }
+  /// Show exit confirmation dialog
+  Future<bool?> showExitDialog() {
+    final loc = AppLocalizations.of(this);
+    return showAlertDialog(
+      title: loc?.translate('exit_app_title') ?? 'Exit App',
+      message: loc?.translate('exit_app_msg') ?? 'Are you sure you want to exit?',
+      confirmText: loc?.translate('yes') ?? 'Yes',
+      cancelText: loc?.translate('no') ?? 'No',
+    );
+  }
 }
+
