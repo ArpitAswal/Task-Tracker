@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:task_tracker/core/localization/app_localizations.dart';
 import 'package:task_tracker/core/services/notification_service.dart';
+import 'package:task_tracker/core/utils/extensions/widget_extensions.dart';
 
 import '../../../core/routes/app_routes.dart';
+import '../../../core/theme/app_colors.dart';
 import '../../../core/utils/extensions/context_extension.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/task_provider.dart';
@@ -236,25 +238,11 @@ class _SettingScreenState extends State<SettingScreen> {
           ),
           const SizedBox(height: 8),
           Card(
-            elevation: 0,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-              side: BorderSide(
-                color: theme.colorScheme.error.withValues(alpha: 0.3),
-              ),
-            ),
-            child: ListTile(
-              leading: Icon(
-                Icons.delete_forever_rounded,
-                color: theme.colorScheme.error,
-              ),
-              title: Text(
-                loc?.translate('delete_all_tasks') ?? 'Delete All Tasks',
-                style: theme.textTheme.titleMedium?.copyWith(
-                  color: theme.colorScheme.error,
-                ),
-              ),
-              onTap: () => _handleDeleteAllTasks(context, loc),
+            child: context.themedOutlinedButton(
+              label: loc?.translate('delete_all_tasks') ?? 'Delete All Tasks',
+              onPressed: () => _handleDeleteAllTasks(context, loc),
+              color: AppColors.error,
+              icon: Icons.delete_outline_outlined
             ),
           ),
         ],
@@ -268,7 +256,8 @@ class _SettingScreenState extends State<SettingScreen> {
   ) async {
     final confirmed = await context.showAlertDialog(
       title: loc?.translate('delete_all_tasks') ?? 'Delete All Tasks',
-      message: loc?.translate('delete_all_tasks_confirm') ??
+      message:
+          loc?.translate('delete_all_tasks_confirm') ??
           'Are you sure you want to delete all tasks? This action cannot be undone.',
       confirmText: loc?.translate('delete') ?? 'Delete',
       cancelText: loc?.translate('cancel') ?? 'Cancel',
@@ -321,7 +310,7 @@ class _SectionHeader extends StatelessWidget {
     final theme = Theme.of(context);
     return Row(
       children: [
-        Icon(icon, size: 20, color: theme.colorScheme.primary),
+        Icon(icon, color: theme.colorScheme.primary),
         const SizedBox(width: 8),
         Text(
           title,

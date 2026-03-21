@@ -3,10 +3,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:task_tracker/core/utils/extensions/context_extension.dart';
 import 'package:task_tracker/presentation/providers/task_provider.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 import 'core/routes/app_routes.dart';
+import 'core/theme/app_colors.dart';
 import 'core/theme/app_theme.dart';
 import 'core/localization/app_localizations.dart';
 import 'core/services/storage_service.dart';
@@ -52,39 +54,6 @@ void main() async {
 
   runApp(const MyApp());
 }
-//
-// Future<void> _addDummyUsersIfEmpty() async {
-//   final firestore = FirebaseFirestore.instance;
-//   final usersCol = firestore.collection(FirebaseCollections.users);
-//
-//   try {
-//     final snapshot = await usersCol.limit(2).get();
-//     if (snapshot.docs.length <= 2) {
-//       debugPrint("Adding 25 dummy users to Leaderboard...");
-//       for (int i = 1; i <= 25; i++) {
-//         final uid = "dummy_user_$i";
-//         await usersCol.doc(uid).set({
-//           'uid': uid,
-//           'email': 'dummy$i@example.com',
-//           'firstName': 'User',
-//           'lastName': '$i',
-//           'completedTasksCount': 100 - i, // So User 1 has 99, User 25 has 75...
-//           'currentStreak': i % 5,
-//           'longestStreak': i % 10,
-//           'createdAt': FieldValue.serverTimestamp(),
-//           'updatedAt': FieldValue.serverTimestamp(),
-//         });
-//       }
-//       debugPrint("Dummy users added successfully.");
-//     } else {
-//       debugPrint(
-//         "Sufficient users already exist, skipping dummy data creation.",
-//       );
-//     }
-//   } catch (e) {
-//     debugPrint("Failed to add dummy users: $e");
-//   }
-// }
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
@@ -114,8 +83,8 @@ class MyApp extends StatelessWidget {
             title: AppConstants.appName,
 
             // Theme
-            theme: AppTheme.lightTheme,
-            darkTheme: AppTheme.darkTheme,
+            theme: AppTheme.getLightTheme(context),
+            darkTheme: AppTheme.getDarkTheme(context),
             themeMode: themeProvider.themeMode,
 
             // Localization

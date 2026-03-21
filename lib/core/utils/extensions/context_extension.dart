@@ -70,11 +70,7 @@ extension ContextExtensions on BuildContext {
   bool get isDesktop => screenWidth >= 900;
 
   /// Get responsive value based on screen size
-  T responsiveValue<T>({
-    required T mobile,
-    T? tablet,
-    T? desktop,
-  }) {
+  T responsiveValue<T>({required T mobile, T? tablet, T? desktop}) {
     if (isDesktop && desktop != null) return desktop;
     if (isTablet && tablet != null) return tablet;
     return mobile;
@@ -119,41 +115,63 @@ extension ContextExtensions on BuildContext {
     final currentTheme = theme;
     return showDialog<bool>(
       context: this,
-      builder: (context) => AlertDialog(
-        backgroundColor: currentTheme.scaffoldBackgroundColor,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Text(
-          title,
-          style: currentTheme.textTheme.titleLarge?.copyWith(
-            fontWeight: FontWeight.bold,
+      barrierDismissible: false,
+      builder: (context) => Center(
+        child: ConstrainedBox(
+          // Limits the width on tablets so it stays centered and readable
+          constraints: BoxConstraints(
+            maxWidth: MediaQuery.of(context).size.width * 0.9,
           ),
-        ),
-        content: Text(
-          message,
-          style: currentTheme.textTheme.bodyMedium,
-        ),
-        actions: [
-          if (cancelText != null)
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(false),
-              style: TextButton.styleFrom(
-                foregroundColor: currentTheme.colorScheme.onSurface.withOpacity(0.6),
-              ),
-              child: Text(cancelText),
+          child: AlertDialog(
+            backgroundColor: currentTheme.scaffoldBackgroundColor,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
             ),
-          ElevatedButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: currentTheme.colorScheme.primary,
-              foregroundColor: Colors.white,
-              elevation: 0,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
+            // DYNAMIC PADDING
+            titlePadding: EdgeInsets.fromLTRB(
+              isTablet ? 32 : 24, // Left
+              isTablet ? 32 : 24, // Top
+              isTablet ? 32 : 24, // Right
+              isTablet ? 16 : 12, // Bottom
+            ),
+            contentPadding: EdgeInsets.symmetric(
+              horizontal: isTablet ? 32 : 24,
+            ),
+            actionsPadding: EdgeInsets.all(isTablet ? 24 : 16),
+            title: Text(
+              title,
+              style: currentTheme.textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.bold,
               ),
             ),
-            child: Text(confirmText ?? 'OK'),
+            content: Text(message, style: currentTheme.textTheme.bodyMedium),
+            actions: [
+              if (cancelText != null)
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(false),
+                  style: TextButton.styleFrom(
+                    foregroundColor: currentTheme.colorScheme.onSurface
+                        .withOpacity(0.6),
+                  ),
+                  child: Text(cancelText),
+                ),
+              ElevatedButton(
+                onPressed: () => Navigator.of(context).pop(true),
+                style: theme.elevatedButtonTheme.style?.copyWith(
+                  padding: const WidgetStatePropertyAll(
+                    EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  ),
+                  shape: WidgetStatePropertyAll(
+                    RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                ),
+                child: Text(confirmText ?? 'OK'),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
@@ -186,9 +204,7 @@ extension ContextExtensions on BuildContext {
 
   /// Show a basic snackbar
   void showSnackBar(String message) {
-    ScaffoldMessenger.of(this).showSnackBar(
-      SnackBar(content: Text(message)),
-    );
+    ScaffoldMessenger.of(this).showSnackBar(SnackBar(content: Text(message)));
   }
 
   /// Hide current snackbar

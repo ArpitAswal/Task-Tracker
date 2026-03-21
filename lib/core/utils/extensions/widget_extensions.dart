@@ -119,7 +119,9 @@ extension WidgetExtensions on BuildContext {
       height: height,
       child: ElevatedButton(
         onPressed: isLoading ? null : onPressed,
-        style: theme.elevatedButtonTheme.style,
+        style: theme.elevatedButtonTheme.style?.copyWith(
+          shape: WidgetStatePropertyAll(RoundedRectangleBorder(borderRadius: BorderRadiusGeometry.circular(14)))
+        ),
         child: isLoading
             ? const SizedBox(
                 width: 24,
@@ -153,6 +155,7 @@ extension WidgetExtensions on BuildContext {
     IconData? icon,
     double? height,
     double? width,
+    Color? color
   }) {
     final theme = Theme.of(this);
     height = isTablet ? 62 : 44;
@@ -163,9 +166,9 @@ extension WidgetExtensions on BuildContext {
       child: OutlinedButton(
         onPressed: onPressed,
         style: OutlinedButton.styleFrom(
-          foregroundColor: theme.colorScheme.primary,
+          foregroundColor: color ?? theme.colorScheme.primary,
           side: BorderSide(
-            color: theme.colorScheme.primary.withValues(
+            color: color?.withValues(alpha: 0.4) ?? theme.colorScheme.primary.withValues(
               alpha: isDarkMode ? 0.8 : 0.4,
             ),
             width: 1.5,
@@ -185,7 +188,7 @@ extension WidgetExtensions on BuildContext {
               label,
               style: theme.textTheme.titleSmall?.copyWith(
                 fontWeight: FontWeight.w600,
-                color: theme.colorScheme.primary,
+                color: color ?? theme.colorScheme.primary,
               ),
             ),
           ],
