@@ -1,3 +1,9 @@
+## App Logo
+Click on a logo to download the latest version of the app apk file:
+
+<a href="https://github.com/ArpitAswal/Task-Tracker/releases/download/v1.0.0/TaskTracker-app-v1.0.0-release.apk"><img width="96" height="96" alt="todo_image" src="https://github.com/user-attachments/assets/a80658be-b0a7-4e09-a8ea-2005eaacb136" />
+</a>
+
 # Task Tracker
 
 Task Tracker is a Flutter productivity app for managing personal tasks with offline support, Firebase sync, localized UI, and scheduled local notifications.
