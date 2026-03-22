@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:task_tracker/core/localization/app_localizations.dart';
+import 'package:task_tracker/core/services/battery_optimization_service.dart';
+import 'package:task_tracker/core/services/device_settings_service.dart';
 import 'package:task_tracker/core/services/notification_service.dart';
 import 'package:task_tracker/core/utils/extensions/widget_extensions.dart';
 
@@ -22,11 +24,17 @@ class SettingScreen extends StatefulWidget {
 class _SettingScreenState extends State<SettingScreen> {
   bool _notificationsEnabled = true;
   bool _isLoadingNotifPref = true;
+  bool _systemNotificationsEnabled = false;
+  bool _isLoadingSystemNotifications = true;
+  bool? _batteryOptimizationDisabled;
+  bool _isLoadingBatteryOptimization = true;
 
   @override
   void initState() {
     super.initState();
     _loadNotificationPref();
+    _loadSystemNotificationStatus();
+    _loadBatteryOptimizationStatus();
   }
 
   Future<void> _loadNotificationPref() async {
@@ -39,10 +47,33 @@ class _SettingScreenState extends State<SettingScreen> {
     }
   }
 
+  Future<void> _loadSystemNotificationStatus() async {
+    // Keep the Settings UI aligned with the real OS permission state.
+    final enabled = await NotificationService.areSystemNotificationsEnabled();
+    if (mounted) {
+      setState(() {
+        _systemNotificationsEnabled = enabled;
+        _isLoadingSystemNotifications = false;
+      });
+    }
+  }
+
+  Future<void> _loadBatteryOptimizationStatus() async {
+    final status =
+        await BatteryOptimizationService.isIgnoringBatteryOptimizations();
+    if (mounted) {
+      setState(() {
+        _batteryOptimizationDisabled = status;
+        _isLoadingBatteryOptimization = false;
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context);
     final themeProvider = context.watch<ThemeProvider>();
+    final taskProvider = context.read<TaskProvider>();
     final theme = Theme.of(context);
 
     return Scaffold(
@@ -115,6 +146,56 @@ class _SettingScreenState extends State<SettingScreen> {
                   ),
                 ),
               ),
+            ),
+          ),
+
+          const SizedBox(height: 12),
+
+          Card(
+            elevation: 0,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+              side: BorderSide(
+                color: theme.dividerColor.withValues(alpha: 0.3),
+              ),
+            ),
+            child: ListTile(
+              leading: Icon(
+                _systemNotificationsEnabled
+                    ? Icons.notifications_rounded
+                    : Icons.notifications_paused_rounded,
+                color: _systemNotificationsEnabled
+                    ? theme.colorScheme.primary
+                    : theme.colorScheme.onSurfaceVariant,
+              ),
+              title: Text(
+                loc?.translate('notification_access') ??
+                    'Notification Access',
+                style: theme.textTheme.titleMedium,
+              ),
+              subtitle: Text(
+                _isLoadingSystemNotifications
+                    ? (loc?.translate('notification_access') ??
+                        'Notification Access')
+                    : _systemNotificationsEnabled
+                    ? (loc?.translate('notification_access_enabled') ??
+                        'Notifications are allowed for this device')
+                    : (loc?.translate('notification_access_disabled') ??
+                        'Notifications are blocked. Open system settings to enable them'),
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+              trailing: Icon(
+                Icons.open_in_new_rounded,
+                color: theme.colorScheme.primary,
+              ),
+              onTap: () async {
+                // The app cannot toggle OS notification permission itself, so
+                // this opens the platform settings page and then refreshes.
+                await DeviceSettingsService.openNotificationSettings();
+                await _loadSystemNotificationStatus();
+              },
             ),
           ),
 
@@ -221,7 +302,56 @@ class _SettingScreenState extends State<SettingScreen> {
                     ? null
                     : (value) async {
                         setState(() => _notificationsEnabled = value);
-                        await NotificationService.setNotificationEnabled(value);
+                        await taskProvider.updateNotificationPreference(value);
+                      },
+              ),
+            ),
+          ),
+
+          const SizedBox(height: 12),
+
+          Card(
+            elevation: 0,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+              side: BorderSide(
+                color: theme.dividerColor.withValues(alpha: 0.3),
+              ),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 4),
+              child: SwitchListTile.adaptive(
+                secondary: Icon(
+                  (_batteryOptimizationDisabled ?? false)
+                      ? Icons.battery_saver_outlined
+                      : Icons.battery_alert_outlined,
+                  color: (_batteryOptimizationDisabled ?? false)
+                      ? theme.colorScheme.primary
+                      : theme.colorScheme.onSurfaceVariant,
+                ),
+                title: Text(
+                  loc?.translate('battery_optimization') ??
+                      'Battery Optimization',
+                  style: theme.textTheme.titleMedium,
+                ),
+                subtitle: Text(
+                  _batteryOptimizationSubtitle(loc),
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+                value: _batteryOptimizationDisabled ?? false,
+                onChanged: _isLoadingBatteryOptimization ||
+                        _batteryOptimizationDisabled == null
+                    ? null
+                    : (_) async {
+                        // Android owns this setting, so we deep-link to system
+                        // settings and refresh the visible status afterward.
+                        await BatteryOptimizationService.openSettings(
+                          requestIgnore:
+                              !(_batteryOptimizationDisabled ?? false),
+                        );
+                        await _loadBatteryOptimizationStatus();
                       },
               ),
             ),
@@ -281,6 +411,25 @@ class _SettingScreenState extends State<SettingScreen> {
       case ThemeMode.dark:
         return loc?.translate('dark_theme') ?? 'Dark';
     }
+  }
+
+  String _batteryOptimizationSubtitle(AppLocalizations? loc) {
+    if (_isLoadingBatteryOptimization) {
+      return loc?.translate('battery_optimization') ?? 'Battery Optimization';
+    }
+
+    if (_batteryOptimizationDisabled == null) {
+      return loc?.translate('battery_optimization_unavailable') ??
+          'Battery optimization controls are only available on Android';
+    }
+
+    if (_batteryOptimizationDisabled == true) {
+      return loc?.translate('battery_optimization_disabled') ??
+          'Battery optimization is disabled for this app';
+    }
+
+    return loc?.translate('battery_optimization_enabled') ??
+        'Battery optimization is active and may delay reminders';
   }
 
   Future<void> _handleLogout(BuildContext context) async {

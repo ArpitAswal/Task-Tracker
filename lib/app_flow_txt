@@ -1,292 +1,173 @@
-# Task Tracker - Setup Guide
+# Task Tracker - App Flow
 
-## 📋 Phase 1: Authentication & Onboarding ✅
+## 1. App Launch
 
-This phase includes:
-- ✅ Login Screen with Remember Me & Forgot Password
-- ✅ Signup Screen
-- ✅ Forgot Password Screen
-- ✅ Onboarding Screen with smooth page indicators
-- ✅ Complete theming system (Light/Dark/System)
-- ✅ Localization support (English & Hindi)
-- ✅ MVVM Architecture with Provider
-- ✅ Firebase Authentication & Firestore ready
-- ✅ Secure storage for credentials
-- ✅ Responsive UI for different devices
+1. `main.dart` initializes:
+   - Firebase
+   - Hive + secure storage + shared preferences
+   - local notifications
+   - theme and localization providers
+2. Splash screen decides the first route.
 
----
+## 2. Splash Decision Flow
 
-## 🚀 Setup Instructions
+The splash screen checks:
+- Is onboarding completed?
+- Is the user logged in?
+- Is the email verified?
 
-### Step 1: Create Flutter Project
-```bash
-flutter create task_tracker
-cd task_tracker
-```
+Navigation result:
+- First launch -> Onboarding
+- Onboarding completed + logged out -> Login
+- Logged in but email not verified -> Email Verification
+- Logged in + verified -> Home Dashboard
 
-### Step 2: Replace Files
-1. Replace `pubspec.yaml` with the provided version
-2. Copy all the files into their respective directories following this structure:
+## 3. Onboarding Flow
 
-```
-lib/
-├── core/
-│   ├── constants/
-│   │   └── app_constants.dart
-│   ├── localization/
-│   │   └── app_localizations.dart
-│   ├── services/
-│   │   └── storage_service.dart
-│   ├── theme/
-│   │   ├── app_colors.dart
-│   │   ├── app_theme.dart
-│   │   └── text_styles.dart
-│   └── utils/
-│       ├── curved_clipper.dart
-│       └── validators.dart
-├── data/
-│   ├── models/
-│   │   └── user_model.dart
-│   └── repositories/
-│       └── auth_repository.dart
-├── presentation/
-│   ├── providers/
-│   │   ├── auth_provider.dart
-│   │   ├── locale_provider.dart
-│   │   └── theme_provider.dart
-│   ├── screens/
-│   │   ├── auth/
-│   │   │   ├── forgot_password_screen.dart
-│   │   │   ├── login_screen.dart
-│   │   │   └── signup_screen.dart
-│   │   └── onboarding/
-│   │       └── onboarding_screen.dart
-│   └── widgets/
-│       └── common/
-│           ├── custom_button.dart
-│           └── custom_text_field.dart
-└── main.dart
-```
+The onboarding sequence introduces:
+- task organization
+- reminders and deadlines
+- progress tracking
 
-### Step 3: Install Dependencies
-```bash
-flutter pub get
-```
+When onboarding finishes, a persistent flag is saved and the user is sent to Login.
 
-### Step 4: Setup Firebase
+## 4. Authentication Flow
 
-1. **Create Firebase Project:**
-   - Go to [Firebase Console](https://console.firebase.google.com/)
-   - Create a new project
-   - Enable Authentication > Email/Password
-   - Create Firestore Database
+Available screens:
+- Login
+- Sign Up
+- Forgot Password
+- Email Verification
 
-2. **Add Firebase to Android:**
-   ```bash
-   # Install FlutterFire CLI
-   dart pub global activate flutterfire_cli
+Supported behaviors:
+- email/password sign in
+- email/password sign up
+- remember me
+- reset password email
+- logout
 
-   # Configure Firebase
-   flutterfire configure
-   ```
+After successful authentication and verification, the app opens the Home Dashboard.
 
-   This will create `firebase_options.dart` automatically.
+## 5. Home Dashboard Flow
 
-3. **Add Firebase to iOS:**
-   - Download `GoogleService-Info.plist`
-   - Add to `ios/Runner` directory
-   - Update `Info.plist` with required permissions
+The dashboard is the main shell of the app. It provides four sections:
+- Tasks
+- Profile
+- Leaderboard
+- Settings
 
-4. **Uncomment Firebase initialization in main.dart:**
-   ```dart
-   // Uncomment these lines in main.dart
-   import 'firebase_options.dart';
+The dashboard keeps navigation in one place and adapts to phone and tablet layouts.
 
-   await Firebase.initializeApp(
-     options: DefaultFirebaseOptions.currentPlatform,
-   );
-   ```
+## 6. Task Flow
 
-### Step 5: Add Assets
+Task screen responsibilities:
+- load all user tasks
+- sync local Hive data with Firestore
+- show filtered task lists
+- sort tasks by due date, created date, or priority
 
-1. Create `assets/images/` directory
-2. Add these images (you can use placeholders):
-   - `login_page.png`
-   - `signup_page.png`
-   - `onboarding_page.png`
-   - `app_logo.png` (optional)
+Task creation:
+- user enters title
+- optional description
+- due date / end time
+- priority
+- category
+- optional reminder time
 
-3. Update `pubspec.yaml` if needed:
-   ```yaml
-   flutter:
-     assets:
-       - assets/images/
-   ```
+Task validation:
+- reminder cannot be in the past
+- reminder must be before the task end time
+- reminder must be at least 10 minutes before end time
 
-### Step 6: Add Fonts (Optional)
+Task actions:
+- create task
+- update task
+- mark complete / incomplete
+- delete task
+- delete all tasks from settings
 
-1. Download Poppins font from [Google Fonts](https://fonts.google.com/specimen/Poppins)
-2. Create `fonts/` directory
-3. Add font files:
-   - `Poppins-Regular.ttf`
-   - `Poppins-Medium.ttf`
-   - `Poppins-SemiBold.ttf`
-   - `Poppins-Bold.ttf`
+Notification behavior tied to tasks:
+- a reminder notification can be scheduled at `reminderAt`
+- an end-of-timeframe notification can also be scheduled at task end time
+- completed or deleted tasks cancel their scheduled notifications
 
-Or remove font configuration from `pubspec.yaml` to use system fonts.
+## 7. Notification Flow
 
-### Step 7: Android Configuration
+The app uses local notifications for task reminders.
 
-Update `android/app/build.gradle`:
-```gradle
-android {
-    defaultConfig {
-        minSdkVersion 21  // Changed from 19
-        targetSdkVersion 33
-    }
-}
-```
+Initialization:
+- notification permission is requested on app startup
+- on Android, exact alarm capability is also requested when needed
 
-### Step 8: iOS Configuration
+Scheduling rules:
+- reminders are only scheduled if the global Task Reminders setting is enabled
+- reminders use timezone-aware scheduling
+- Android uses `exactAllowWhileIdle` to improve delivery during idle modes
 
-Update `ios/Podfile`:
-```ruby
-platform :ios, '12.0'  # Changed from 9.0
-```
+Global toggle behavior:
+- OFF: all pending reminder notifications are cancelled
+- ON: active incomplete tasks with valid future reminders are scheduled again
 
----
+Overdue notifications:
+- on app initialization, the app checks overdue incomplete tasks
+- a general overdue notification is shown at most once per day
 
-## ▶️ Running the App
+## 8. Battery Optimization Flow
 
-```bash
-# For Android
-flutter run
+Android battery optimization can delay or suppress reminders, especially on aggressive OEM devices.
 
-# For iOS
-flutter run
+Settings behavior:
+- the Settings screen shows a Battery Optimization row under Task Reminders
+- the row reflects whether the app is currently exempt from optimization
+- tapping the control opens the Android system battery optimization screen
 
-# For Web (limited functionality)
-flutter run -d chrome
-```
+Important platform note:
+- the app cannot silently force this setting on or off
+- Android requires the user to confirm the battery optimization change in system UI
 
----
+## 9. Profile Flow
 
-## 🎨 Features Implemented
+Profile features:
+- create or update profile details
+- manage avatar/photo
+- view task statistics
+- view streak values
 
-### Authentication Flow
-1. **Splash Screen** → Checks login status
-2. **Onboarding** → First-time users only
-3. **Login/Signup** → Full validation & error handling
-4. **Remember Me** → Secure credential storage
-5. **Forgot Password** → Password reset email
+The profile area focuses on user identity and progress.
 
-### Theming
-- Light Mode ☀️
-- Dark Mode 🌙
-- System Mode (auto-detect)
-- Persistent theme preference
+## 10. Leaderboard Flow
 
-### Localization
-- English 🇺🇸
-- Hindi 🇮🇳
-- Easy to add more languages
+Leaderboard features:
+- fetch users from repository/provider
+- display ranking data
+- support progressive loading of more entries
 
-### Security
-- Secure credential storage using `flutter_secure_storage`
-- Password validation (min 6 chars)
-- Email format validation
-- Firebase security rules ready
+## 11. Settings Flow
 
----
+Current settings include:
+- theme: system / light / dark
+- language: English / Hindi
+- task reminders: enable / disable
+- battery optimization shortcut on Android
+- delete all tasks
 
-## 🧪 Testing Without Firebase
+The settings screen follows the same theme and localization rules as the rest of the app.
 
-If you want to test the UI without setting up Firebase:
+## 12. Persistence Flow
 
-1. Comment out Firebase initialization in `main.dart`
-2. Replace `AuthRepository` methods with mock implementations
-3. Use dummy data for testing
+Storage layers:
+- `FlutterSecureStorage` for sensitive credentials
+- `SharedPreferences` for settings and app preferences
+- Hive for offline task data
+- Firestore for cloud sync
 
----
+Task sync behavior:
+- local data is the resilient offline source
+- Firestore sync merges local and cloud data using task IDs and timestamps
 
-## 📱 Responsive Design
+## 13. Failure / Recovery Notes
 
-The app works on:
-- Small phones (320px width)
-- Regular phones (375px - 428px)
-- Large phones (428px+)
-- Tablets
-- Both iOS and Android
-
----
-
-## 🔧 Troubleshooting
-
-### Common Issues:
-
-**1. Firebase not initialized:**
-```dart
-// Ensure this is uncommented in main.dart
-await Firebase.initializeApp(
-  options: DefaultFirebaseOptions.currentPlatform,
-);
-```
-
-**2. Assets not found:**
-```bash
-flutter clean
-flutter pub get
-```
-
-**3. Dependency conflicts:**
-```bash
-flutter pub upgrade
-```
-
-**4. Build errors:**
-```bash
-cd android && ./gradlew clean
-cd ios && pod install
-```
-
----
-
-## 📝 Next Steps (Phase 2)
-
-After authentication is working, we'll implement:
-1. Task Management (CRUD operations)
-2. Task lists (Pending/Completed tabs)
-3. Local storage with Hive
-4. Firebase sync
-5. Profile screen
-6. Settings screen
-
----
-
-## 🤝 Need Help?
-
-If you encounter any issues:
-1. Check the error message carefully
-2. Ensure all dependencies are installed
-3. Verify Firebase configuration
-4. Make sure assets are in the correct location
-5. Ask me for specific help!
-
----
-
-## ✅ Checklist Before Testing
-
-- [ ] All files copied to correct directories
-- [ ] `pubspec.yaml` updated
-- [ ] Dependencies installed (`flutter pub get`)
-- [ ] Firebase configured (or commented out)
-- [ ] Assets added (at minimum, placeholder images)
-- [ ] Android minSdkVersion set to 21
-- [ ] iOS platform version set to 12.0
-- [ ] App runs without errors
-
----
-
-**Ready to test?** Run `flutter run` and you should see the splash screen, then onboarding (first time) or login screen!
-
-Let me know if you face any issues during setup. 🚀
+- If notifications are disabled, scheduling becomes a no-op.
+- If battery optimization is active, notifications may still be delayed by the OS.
+- If the device is offline, tasks remain available locally through Hive.
+- When the app returns online, repository sync reconciles local and cloud changes.

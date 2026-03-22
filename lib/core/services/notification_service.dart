@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_timezone/flutter_timezone.dart';
@@ -6,6 +8,7 @@ import 'package:timezone/data/latest_all.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
 
 import '../../data/models/task_model.dart';
+import '../../data/repositories/task_repository.dart';
 import '../constants/app_constants.dart';
 import '../localization/app_localizations.dart';
 
@@ -28,7 +31,8 @@ class NotificationService {
   static Future<void> initialize() async {
     if (_initialized) return;
 
-    // Initialize timezone
+    // Local notifications must use the device timezone so reminder times match
+    // the user's actual local clock after restarts and travel.
     tz.initializeTimeZones();
     _timezone = await FlutterTimezone.getLocalTimezone();
     _availableTimezones = await FlutterTimezone.getAvailableTimezones();
@@ -53,11 +57,32 @@ class NotificationService {
 
     await _notifications.initialize(settings);
 
-    // Request permissions on Android 13+
+    // Request permissions on supported mobile platforms so reminder creation
+    // later can rely on a known baseline state.
     final androidPlugin = _notifications
         .resolvePlatformSpecificImplementation<
             AndroidFlutterLocalNotificationsPlugin>();
-    final granted = await androidPlugin?.requestNotificationsPermission();
+    final iosPlugin = _notifications
+        .resolvePlatformSpecificImplementation<
+            IOSFlutterLocalNotificationsPlugin>();
+
+    bool? granted;
+
+    if (Platform.isAndroid) {
+      granted = await androidPlugin?.requestNotificationsPermission();
+      // Exact alarms improve reliability during idle/Doze states on Android.
+      final canScheduleExact =
+          await androidPlugin?.canScheduleExactNotifications();
+      if (canScheduleExact == false) {
+        await androidPlugin?.requestExactAlarmsPermission();
+      }
+    } else if (Platform.isIOS) {
+      granted = await iosPlugin?.requestPermissions(
+        alert: true,
+        badge: true,
+        sound: true,
+      );
+    }
 
     // Persist permission state in SharedPreferences
     if (granted == true) {
@@ -77,6 +102,8 @@ class NotificationService {
   static Future<void> scheduleTaskReminder(TaskModel task) async {
     // Check global toggle
     if (!await isNotificationEnabled()) return;
+    // Skip scheduling if the OS itself has notifications blocked.
+    if (!await areSystemNotificationsEnabled()) return;
 
     // Check per-task reminder
     if (!task.hasReminder) return;
@@ -107,7 +134,7 @@ class NotificationService {
     try {
       final tzTime = tz.TZDateTime.from(reminderTime, tz.local);
       
-      // Calculate how much time is left between reminder and end date
+      // Build a friendly "due in ..." message from reminder time to task end.
       final difference = task.endDate.difference(reminderTime);
       String timeLeftStr;
       
@@ -132,7 +159,7 @@ class NotificationService {
             .replaceAll('{timeLeft}', timeLeftStr),
         tzTime,
         notificationDetails,
-        androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
         matchDateTimeComponents: null,
       );
       debugPrint(
@@ -148,7 +175,7 @@ class NotificationService {
               .replaceAll('{taskTitle}', task.title),
           tzEndTime,
           notificationDetails,
-          androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+          androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
           matchDateTimeComponents: null,
         );
         debugPrint(
@@ -189,7 +216,7 @@ class NotificationService {
   /// Returns `true` if enabled (default), `false` if user disabled them
   static Future<bool> isNotificationEnabled() async {
     final prefs = await SharedPreferences.getInstance();
-    return prefs.getBool(StorageKeys.notificationEnabled) ?? false;
+    return prefs.getBool(StorageKeys.notificationEnabled) ?? true;
   }
 
   /// Set the global notification enabled/disabled flag
@@ -204,6 +231,79 @@ class NotificationService {
       await cancelAllReminders();
     }
     debugPrint('🔔 Notifications ${enabled ? "enabled" : "disabled"}');
+  }
+
+  static Future<bool> areSystemNotificationsEnabled() async {
+    if (Platform.isAndroid) {
+      // Android exposes whether app notifications are allowed at the OS level.
+      final androidPlugin = _notifications
+          .resolvePlatformSpecificImplementation<
+              AndroidFlutterLocalNotificationsPlugin>();
+      return await androidPlugin?.areNotificationsEnabled() ?? false;
+    }
+
+    if (Platform.isIOS) {
+      // iOS returns a richer permission object; we only need the main enabled
+      // flag to decide whether reminders can be shown.
+      final iosPlugin = _notifications
+          .resolvePlatformSpecificImplementation<
+              IOSFlutterLocalNotificationsPlugin>();
+      final permissions = await iosPlugin?.checkPermissions();
+      return permissions?.isEnabled ?? false;
+    }
+
+    return true;
+  }
+
+  static Future<bool> requestNotificationPermissionsIfNeeded() async {
+    if (await areSystemNotificationsEnabled()) {
+      return true;
+    }
+
+    if (Platform.isAndroid) {
+      // Android can show the runtime notification permission prompt directly.
+      final androidPlugin = _notifications
+          .resolvePlatformSpecificImplementation<
+              AndroidFlutterLocalNotificationsPlugin>();
+      final granted = await androidPlugin?.requestNotificationsPermission();
+      return granted ?? false;
+    }
+
+    if (Platform.isIOS) {
+      // iOS needs an explicit alert/sound/badge permission request.
+      final iosPlugin = _notifications
+          .resolvePlatformSpecificImplementation<
+              IOSFlutterLocalNotificationsPlugin>();
+      final granted = await iosPlugin?.requestPermissions(
+        alert: true,
+        badge: true,
+        sound: true,
+      );
+      return granted ?? false;
+    }
+
+    return true;
+  }
+
+  /// Re-schedule active reminders for the current user after notifications
+  /// are enabled again or after app recovery flows.
+  static Future<void> rescheduleActiveRemindersForCurrentUser() async {
+    final repository = TaskRepository();
+    final tasks = await repository.getAllTasksForCurrentUser();
+
+    for (final task in tasks) {
+      final shouldSchedule =
+          !task.isCompleted &&
+          task.hasReminder &&
+          task.reminderAt != null &&
+          task.reminderAt!.isAfter(DateTime.now());
+
+      if (shouldSchedule) {
+        await scheduleTaskReminder(task);
+      } else {
+        await cancelTaskReminder(task.id);
+      }
+    }
   }
 
   // ===========================================================================

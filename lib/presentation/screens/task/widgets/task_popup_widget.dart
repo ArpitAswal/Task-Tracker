@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:task_tracker/core/localization/app_localizations.dart';
+import 'package:task_tracker/core/services/device_settings_service.dart';
+import 'package:task_tracker/core/services/notification_service.dart';
 import 'package:task_tracker/core/utils/extensions/context_extension.dart';
 import '../../../../core/constants/enums.dart';
 import '../../../../core/utils/extensions/widget_extensions.dart';
@@ -109,6 +111,11 @@ class _AddTaskSheetState extends State<AddTaskSheet> {
   Future<void> _submit() async {
     if (!_validate()) return;
 
+    // Before saving a reminder, warn the user about any OS-level blockers that
+    // could make the notification look "broken" later.
+    await _prepareReminderReliabilityChecks();
+    if (!mounted) return;
+
     final isEditing = widget.task != null;
     final title = _titleController.text.trim();
     final description = _descriptionController.text.trim();
@@ -153,6 +160,55 @@ class _AddTaskSheetState extends State<AddTaskSheet> {
     } else {
       debugPrint("# AppError:---> ${widget.provider.errorMessage}");
       context.showErrorToast(widget.provider.errorMessage ?? '');
+    }
+  }
+
+  Future<void> _prepareReminderReliabilityChecks() async {
+    // First verify notification permission, because without it no reminder can
+    // be shown on either Android or iOS.
+    final notificationsEnabled =
+        await NotificationService.requestNotificationPermissionsIfNeeded();
+    if (!mounted) return;
+
+    if (!notificationsEnabled) {
+      final openSettings = await context.showAlertDialog(
+        title:
+            l10n?.translate('notification_permission_title') ??
+            'Allow Notifications',
+        message:
+            l10n?.translate('notification_permission_message') ??
+            'Task reminders need notification access. You can still save the task, but reminders will not appear until notifications are enabled.',
+        confirmText:
+            l10n?.translate('open_settings') ?? 'Open Settings',
+        cancelText: l10n?.translate('later') ?? 'Later',
+      );
+
+      if (openSettings == true) {
+        await DeviceSettingsService.openNotificationSettings();
+      }
+    }
+
+    // Battery optimization is only meaningful on Android. When active, it may
+    // delay reminders even if notification permission is already granted.
+    final batteryOptimizationDisabled =
+        await DeviceSettingsService.isIgnoringBatteryOptimizations();
+    if (!mounted || batteryOptimizationDisabled != false) return;
+
+    final openSettings = await context.showAlertDialog(
+      title:
+          l10n?.translate('battery_optimization_warning_title') ??
+          'Battery Optimization Active',
+      message:
+          l10n?.translate('battery_optimization_warning_message') ??
+          'Battery optimization may delay task reminders on some Android devices. You can still save the task now and whitelist the app for more reliable alerts.',
+      confirmText: l10n?.translate('open_settings') ?? 'Open Settings',
+      cancelText: l10n?.translate('later') ?? 'Later',
+    );
+
+    if (openSettings == true) {
+      await DeviceSettingsService.openBatteryOptimizationSettings(
+        requestIgnore: true,
+      );
     }
   }
 

@@ -482,6 +482,17 @@ class TaskProvider with ChangeNotifier {
     }
   }
 
+  Future<void> updateNotificationPreference(bool enabled) async {
+    await NotificationService.setNotificationEnabled(enabled);
+
+    if (enabled) {
+      await NotificationService.rescheduleActiveRemindersForCurrentUser();
+      await NotificationService.checkAndNotifyOverdueTasks(_tasks);
+    }
+
+    await loadTasks();
+  }
+
   /// Delete all completed tasks
   ///
   /// Returns: Number of tasks deleted

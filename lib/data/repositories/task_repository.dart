@@ -127,6 +127,12 @@ class TaskRepository {
     }
   }
 
+  Future<List<TaskModel>> getAllTasksForCurrentUser({bool fromLocal = true}) async {
+    final uid = _authUser.currentUser?.uid;
+    if (uid == null) return [];
+    return getAllTasks(uid, fromLocal: fromLocal);
+  }
+
   /// Get pending tasks (not completed and not overdue)
   ///
   /// [userId] - User ID to fetch tasks for
