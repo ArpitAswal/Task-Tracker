@@ -3,15 +3,31 @@
 # ===============================
 .env
 .env.*
+secrets.json
+*.secrets.json
+*secret*.json
 *.jks
 *.keystore
 key.properties
+*.p8
+*.p12
+*.pem
 
 # Firebase & Google
 android/app/google-services.json
 ios/Runner/GoogleService-Info.plist
 lib/firebase_options.dart
 firebase.json
+**/google_maps_api.xml
+**/GoogleMapsKeys.plist
+**/google_maps_keys.json
+**/maps_keys.json
+
+# Local project operating docs stay off the public repository.
+*.md
+!/README.md
+!/app_flow.md
+!/app_summary.md
 
 # ===============================
 # 🧱 Flutter / Dart

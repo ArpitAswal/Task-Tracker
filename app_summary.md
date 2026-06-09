@@ -1,0 +1,66 @@
+# Task Tracker Summary
+
+## What The Project Does
+
+Task Tracker is a Flutter productivity app for managing personal tasks with authentication, offline storage, cloud sync, reminders, profile stats, streaks, leaderboard ranking, localization, and theme customization.
+
+## Problem Solved
+
+The app helps users keep track of tasks even when connectivity is unreliable. It combines offline-first task access with Firestore synchronization and local notifications so users can create, manage, and complete work without depending on a constant network connection.
+
+## Major Features
+
+- Email/password authentication with email verification.
+- First-run onboarding.
+- Task CRUD with priority, category, due date, and reminder time.
+- Search, filtering, sorting, pending/completed/overdue/due-today views.
+- Offline Hive persistence with Firestore synchronization.
+- Local task reminders, end-of-task notifications, and daily overdue summaries.
+- Theme switching between system, light, and dark.
+- English and Hindi localization.
+- Profile setup and editing.
+- Streak tracking and leaderboard.
+- Android notification settings and battery optimization shortcuts.
+
+## Technology Stack
+
+- Flutter and Dart
+- Provider for state management
+- Firebase Core, Firebase Auth, Cloud Firestore, Firebase Messaging dependency
+- Hive and Hive Flutter for local data
+- SharedPreferences for app settings
+- Flutter Secure Storage for saved credentials
+- flutter_local_notifications for local notifications
+- timezone and flutter_timezone for timezone-aware scheduling
+- Material 3 theming with Poppins fonts
+
+## Architecture Approach
+
+The project uses a layered Flutter structure:
+
+- `core` for shared infrastructure.
+- `data` for models and repositories.
+- `presentation` for providers, screens, and widgets.
+
+The app uses manual dependency injection through constructors where needed. Provider owns UI state, repositories own data access, and services own platform integrations.
+
+## Challenges Solved
+
+- Offline task availability through user-scoped Hive boxes.
+- Cloud reconciliation by comparing local and Firestore task IDs and timestamps.
+- Timezone-aware local reminders.
+- Android exact alarm and battery optimization constraints.
+- Localized notification text based on saved language preference.
+- Streak and leaderboard updates tied to task completion behavior.
+
+## Scalability Considerations
+
+- The current architecture is suitable for a single Flutter app with Firebase backend services.
+- User-scoped task subcollections keep Firestore task data naturally partitioned by user.
+- Provider is adequate for the current app size; if features expand substantially, state boundaries should be reviewed before adding more providers.
+- Firestore rules, indexes, and CI should be documented and versioned to support team growth.
+- Tests should be expanded around sync, notification, and auth flows before larger feature work.
+
+## Current Business Status
+
+The app appears to be at version `1.0.0+1`, with an APK link referenced from the README. CI/CD and formal release automation are not present in the repository.
