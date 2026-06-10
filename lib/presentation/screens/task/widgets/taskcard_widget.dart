@@ -379,7 +379,7 @@ Future<void> _showDeleteConfirmation(
     cancelText: loc?.translate('cancel'),
   );
 
-  if (confirmed == true) {
+  if (confirmed == true && context.mounted) {
     try {
       LoadingOverlay.show(
         context,
@@ -388,7 +388,7 @@ Future<void> _showDeleteConfirmation(
       final success = await provider.deleteTask(task.id);
       LoadingOverlay.hide();
 
-      if (success) {
+      if (success && context.mounted) {
         MessageUtils.showSuccessToastWithOverlay(
           Overlay.of(context),
           successMsg,
@@ -423,7 +423,7 @@ Future<void> _taskCompleteConfirmation(
     cancelText: loc?.translate('no'),
   );
 
-  if (confirmed == true) {
+  if (confirmed == true && context.mounted) {
     try {
       LoadingOverlay.show(
         context,

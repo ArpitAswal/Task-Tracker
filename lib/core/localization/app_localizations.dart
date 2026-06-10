@@ -213,6 +213,8 @@ class AppLocalizations {
       'data_management': 'Data Management',
       'delete_all_tasks': 'Delete All Tasks',
       'delete_all_tasks_confirm': 'Are you sure you want to delete all tasks? This action cannot be undone.',
+      'deleting_all_tasks': 'Deleting all tasks...',
+      'all_tasks_deleted': 'All tasks deleted successfully',
 
       // Theme Options
       'light_theme': 'Light',
@@ -525,6 +527,8 @@ class AppLocalizations {
       'data_management': 'डेटा प्रबंधन',
       'delete_all_tasks': 'सभी कार्य हटाएं',
       'delete_all_tasks_confirm': 'क्या आप वाकई सभी कार्य हटाना चाहते हैं? यह क्रिया वापस नहीं ली जा सकती।',
+      'deleting_all_tasks': 'सभी कार्य हटाए जा रहे हैं...',
+      'all_tasks_deleted': 'सभी कार्य सफलतापूर्वक हटा दिए गए',
       'start_rank': 'रैंक प्रारंभ करें',
       'end_rank': 'अंतिम रैंक',
 

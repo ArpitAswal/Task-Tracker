@@ -6,6 +6,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:hive/hive.dart';
 import '../../core/constants/app_constants.dart';
+import '../../core/services/notification_service.dart';
 import '../../core/services/storage_service.dart';
 import '../../core/utils/exception_handling/effect_bus.dart';
 import '../models/task_model.dart';
@@ -332,17 +333,43 @@ class TaskRepository {
     }
   }
 
-  /// Delete all tasks for a user
-  ///
-  /// [userId] - User ID to delete tasks for
-  ///
-  /// Returns: Number of tasks deleted
   Future<int> deleteAllTasks(String userId) async {
     try {
-      final allTasks = await getAllTasks(userId);
+      final allTasks = await getAllTasks(userId, fromLocal: true);
 
+      // 1. Clear Hive local box
+      final box = _storageService.getTypedBox<TaskModel>(
+        "${AppConstants.taskBox}_$userId",
+      );
+      await box.clear();
+
+      // 2. Cancel notifications for each task
       for (final task in allTasks) {
-        await deleteTask(task.id);
+        await NotificationService.cancelTaskReminder(task.id);
+      }
+
+      // 3. Delete from Firestore in batches of 500 to prevent hitting Firestore batch limit
+      if (allTasks.isNotEmpty) {
+        final List<List<TaskModel>> chunks = [];
+        for (var i = 0; i < allTasks.length; i += 500) {
+          chunks.add(allTasks.sublist(
+            i,
+            i + 500 > allTasks.length ? allTasks.length : i + 500,
+          ));
+        }
+
+        for (final chunk in chunks) {
+          final batch = _firestore.batch();
+          for (final task in chunk) {
+            final docRef = _firestore
+                .collection(FirebaseCollections.tasks)
+                .doc(userId)
+                .collection(FirebaseCollections.userTasks)
+                .doc(task.id);
+            batch.delete(docRef);
+          }
+          await batch.commit();
+        }
       }
 
       return allTasks.length;

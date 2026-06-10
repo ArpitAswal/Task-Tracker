@@ -175,10 +175,6 @@ Local operating documentation ignored by git:
 - `app_flow.md`
 - `app_summary.md`
 
-Legacy implementation note:
-
-- `lib/app_implementation.text`
-
 ## Contributing
 
 Contributions are welcome through issues and pull requests. Before committing or pushing, verify that no confidential file or secret value is staged.

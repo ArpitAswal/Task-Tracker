@@ -6,9 +6,10 @@ import 'package:task_tracker/core/services/device_settings_service.dart';
 import 'package:task_tracker/core/services/notification_service.dart';
 import 'package:task_tracker/core/utils/extensions/widget_extensions.dart';
 
-import '../../../core/routes/app_routes.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/utils/extensions/context_extension.dart';
+import '../../../core/utils/loading_overlay.dart';
+import '../../../core/utils/message_utils.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/task_provider.dart';
 import '../../providers/theme_provider.dart';
@@ -396,9 +397,18 @@ class _SettingScreenState extends State<SettingScreen> {
     if (confirmed == true && context.mounted) {
       final taskProvider = context.read<TaskProvider>();
       final authProvider = context.read<AuthProvider>();
-      await taskProvider.deleteAllTasks();
-      // Add a method to reset streak in authProvider when tasks are cleared
-      await authProvider.resetStreak();
+      
+      await context.withLoading(
+        message: loc?.translate('deleting_all_tasks') ?? 'Deleting all tasks...',
+        future: Future.wait([
+          taskProvider.deleteAllTasks(),
+          authProvider.resetStreak(),
+        ]),
+      );
+
+      if (context.mounted) {
+        context.showSuccessToast('all_tasks_deleted');
+      }
     }
   }
 
@@ -430,20 +440,6 @@ class _SettingScreenState extends State<SettingScreen> {
 
     return loc?.translate('battery_optimization_enabled') ??
         'Battery optimization is active and may delay reminders';
-  }
-
-  Future<void> _handleLogout(BuildContext context) async {
-    try {
-      final authProvider = context.read<AuthProvider>();
-      final taskProvider = context.read<TaskProvider>();
-      taskProvider.reset();
-      await authProvider.logout();
-    } catch (e) {
-      debugPrint('Logout error: $e');
-    }
-    if (context.mounted) {
-      AppRoutes.navigateAndRemoveUntil(context, AppRoutes.login);
-    }
   }
 }
 

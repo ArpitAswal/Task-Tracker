@@ -96,6 +96,7 @@ class _SignupScreenState extends State<SignupScreen> {
       backgroundColor: theme.scaffoldBackgroundColor,
       resizeToAvoidBottomInset: false,
       body: SafeArea(
+        bottom: false,
         child: CustomScrollView(
           slivers: [
             SliverFillRemaining(

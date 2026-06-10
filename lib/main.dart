@@ -3,12 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
-import 'package:task_tracker/core/utils/extensions/context_extension.dart';
 import 'package:task_tracker/presentation/providers/task_provider.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 
 import 'core/routes/app_routes.dart';
-import 'core/theme/app_colors.dart';
 import 'core/theme/app_theme.dart';
 import 'core/localization/app_localizations.dart';
 import 'core/services/storage_service.dart';
@@ -26,9 +23,6 @@ void main() async {
 
   // Initialize Firebase
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-
-  // Add Dummy logic
-  // await _addDummyUsersIfEmpty();
 
   // ✅ Initialize Storage (only once, at app start)
   await StorageService().initialize();

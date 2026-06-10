@@ -129,6 +129,7 @@ class _LoginScreenState extends State<LoginScreen> {
         backgroundColor: theme.scaffoldBackgroundColor,
         resizeToAvoidBottomInset: false,
         body: SafeArea(
+          bottom: false,
           child: CustomScrollView(
             slivers: [
               SliverFillRemaining(
