@@ -11,6 +11,8 @@ import 'package:task_tracker/presentation/screens/task/task_screen.dart';
 import 'package:task_tracker/presentation/screens/task/widgets/slider_widget.dart';
 import 'package:task_tracker/presentation/screens/task/widgets/task_popup_widget.dart';
 import 'package:task_tracker/presentation/screens/leaderboard/leaderboard_screen.dart';
+import '../../core/services/device_settings_service.dart';
+import '../../core/services/notification_service.dart';
 
 import '../providers/auth_provider.dart';
 import '../providers/task_provider.dart';
@@ -23,7 +25,7 @@ class HomeDashboardView extends StatefulWidget {
 }
 
 class _HomeDashboardViewState extends State<HomeDashboardView>
-    with TickerProviderStateMixin, WidgetsBindingObserver {
+    with TickerProviderStateMixin, WidgetsBindingObserver, RestorationMixin {
   final GlobalKey<SliderDrawerState> _dKey = GlobalKey<SliderDrawerState>();
 
   late AnimationController _fadeController;
@@ -32,6 +34,22 @@ class _HomeDashboardViewState extends State<HomeDashboardView>
   late TaskProvider _taskProvider;
   late AuthProvider _authProvider;
   late AppLocalizations? _localizations;
+
+  // State Restoration
+  final RestorableInt _restorableDrawerIndex = RestorableInt(0);
+
+  @override
+  String? get restorationId => 'home_dashboard_view';
+
+  @override
+  void restoreState(RestorationBucket? oldBucket, bool initialRestore) {
+    registerForRestoration(_restorableDrawerIndex, 'drawer_index');
+    _taskProvider.drawerIndex.value = _restorableDrawerIndex.value;
+  }
+
+  void _syncDrawerIndexToRestoration() {
+    _restorableDrawerIndex.value = _taskProvider.drawerIndex.value;
+  }
 
   @override
   void initState() {
@@ -62,10 +80,39 @@ class _HomeDashboardViewState extends State<HomeDashboardView>
     _taskProvider.onTaskIncomplete = (hasOtherTasks) {
       _authProvider.decrementStreakIfNoOtherTasksToday(hasOtherTasks);
     };
+
+    // Set up sync listener to keep restoration state in sync with runtime changes
+    _taskProvider.drawerIndex.addListener(_syncDrawerIndexToRestoration);
+
+    // Startup notification permission check
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _checkNotificationPermissionOnStartup();
+    });
+  }
+
+  Future<void> _checkNotificationPermissionOnStartup() async {
+    // Check and request notification permission on start (OS prompt if possible)
+    final granted = await NotificationService.requestNotificationPermissionsIfNeeded();
+    if (!granted && mounted) {
+      final loc = AppLocalizations.of(context);
+      final openSettings = await context.showAlertDialog(
+        title: loc?.translate('notification_permission_title') ?? 'Allow Notifications',
+        message: loc?.translate('notification_permission_message') ??
+            'Task reminders need notification access. You can still save the task, but reminders will not appear until notifications are enabled.',
+        confirmText: loc?.translate('open_settings') ?? 'Open Settings',
+        cancelText: loc?.translate('later') ?? 'Later',
+      );
+
+      if (openSettings == true && mounted) {
+        await DeviceSettingsService.openNotificationSettings();
+      }
+    }
   }
 
   @override
   void dispose() {
+    _taskProvider.drawerIndex.removeListener(_syncDrawerIndexToRestoration);
+    _restorableDrawerIndex.dispose();
     WidgetsBinding.instance.removeObserver(this);
     _fadeController.dispose();
     _tabCnt.dispose();

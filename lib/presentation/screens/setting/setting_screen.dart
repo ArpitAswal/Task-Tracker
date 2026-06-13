@@ -4,6 +4,8 @@ import 'package:task_tracker/core/localization/app_localizations.dart';
 import 'package:task_tracker/core/services/battery_optimization_service.dart';
 import 'package:task_tracker/core/services/device_settings_service.dart';
 import 'package:task_tracker/core/services/notification_service.dart';
+import 'package:task_tracker/core/services/storage_service.dart';
+import 'package:task_tracker/core/constants/app_constants.dart';
 import 'package:task_tracker/core/utils/extensions/widget_extensions.dart';
 
 import '../../../core/theme/app_colors.dart';
@@ -22,7 +24,8 @@ class SettingScreen extends StatefulWidget {
   State<SettingScreen> createState() => _SettingScreenState();
 }
 
-class _SettingScreenState extends State<SettingScreen> {
+class _SettingScreenState extends State<SettingScreen>
+    with WidgetsBindingObserver {
   bool _notificationsEnabled = true;
   bool _isLoadingNotifPref = true;
   bool _systemNotificationsEnabled = false;
@@ -33,9 +36,25 @@ class _SettingScreenState extends State<SettingScreen> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _loadNotificationPref();
     _loadSystemNotificationStatus();
     _loadBatteryOptimizationStatus();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _loadNotificationPref();
+      _loadSystemNotificationStatus();
+      _loadBatteryOptimizationStatus();
+    }
   }
 
   Future<void> _loadNotificationPref() async {
@@ -51,22 +70,47 @@ class _SettingScreenState extends State<SettingScreen> {
   Future<void> _loadSystemNotificationStatus() async {
     // Keep the Settings UI aligned with the real OS permission state.
     final enabled = await NotificationService.areSystemNotificationsEnabled();
+    final storage = StorageService();
+    final wasEnabled = storage.readBool(StorageKeys.systemNotificationsEnabled);
+
     if (mounted) {
       setState(() {
         _systemNotificationsEnabled = enabled;
         _isLoadingSystemNotifications = false;
       });
+
+      if (wasEnabled != null && wasEnabled != enabled) {
+        final toastKey = enabled
+            ? 'notification_access_activated'
+            : 'notification_access_deactivated';
+        context.showSuccessToast(toastKey);
+      }
     }
+
+    // Always update the stored value to keep it synced.
+    await storage.saveBool(StorageKeys.systemNotificationsEnabled, enabled);
   }
 
   Future<void> _loadBatteryOptimizationStatus() async {
     final status =
         await BatteryOptimizationService.isIgnoringBatteryOptimizations();
     if (mounted) {
+      final oldStatus = _batteryOptimizationDisabled;
       setState(() {
         _batteryOptimizationDisabled = status;
         _isLoadingBatteryOptimization = false;
       });
+
+      // Show toast if status has changed (e.g. when returning from settings)
+      if (oldStatus != null && oldStatus != status) {
+        if (status == true) {
+          // Optimization is disabled/whitelisted
+          context.showSuccessToast('battery_optimization_deactivated');
+        } else {
+          // Optimization is active
+          context.showSuccessToast('battery_optimization_activated');
+        }
+      }
     }
   }
 
@@ -160,43 +204,66 @@ class _SettingScreenState extends State<SettingScreen> {
                 color: theme.dividerColor.withValues(alpha: 0.3),
               ),
             ),
-            child: ListTile(
-              leading: Icon(
-                _systemNotificationsEnabled
-                    ? Icons.notifications_rounded
-                    : Icons.notifications_paused_rounded,
-                color: _systemNotificationsEnabled
-                    ? theme.colorScheme.primary
-                    : theme.colorScheme.onSurfaceVariant,
+            clipBehavior: Clip.antiAlias,
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Row(
+                children: [
+                  Icon(
+                    _systemNotificationsEnabled
+                        ? Icons.notifications_rounded
+                        : Icons.notifications_paused_rounded,
+                    color: _systemNotificationsEnabled
+                        ? theme.colorScheme.primary
+                        : theme.colorScheme.onSurfaceVariant,
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          loc?.translate('notification_access') ??
+                              'Notification Access',
+                          style: theme.textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          _isLoadingSystemNotifications
+                              ? (loc?.translate('notification_access') ??
+                                    'Notification Access')
+                              : _systemNotificationsEnabled
+                              ? (loc?.translate(
+                                      'notification_access_enabled',
+                                    ) ??
+                                    'Notifications are allowed for this device')
+                              : (loc?.translate(
+                                      'notification_access_disabled',
+                                    ) ??
+                                    'Notifications are blocked. Open system settings to enable them'),
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  GestureDetector(
+                    onTap: () async {
+                      await DeviceSettingsService.openNotificationSettings();
+                      await _loadSystemNotificationStatus();
+                    },
+                    child: Icon(
+                      Icons.open_in_new_rounded,
+                      color: theme.colorScheme.primary,
+                    ),
+                  ),
+                ],
               ),
-              title: Text(
-                loc?.translate('notification_access') ??
-                    'Notification Access',
-                style: theme.textTheme.titleMedium,
-              ),
-              subtitle: Text(
-                _isLoadingSystemNotifications
-                    ? (loc?.translate('notification_access') ??
-                        'Notification Access')
-                    : _systemNotificationsEnabled
-                    ? (loc?.translate('notification_access_enabled') ??
-                        'Notifications are allowed for this device')
-                    : (loc?.translate('notification_access_disabled') ??
-                        'Notifications are blocked. Open system settings to enable them'),
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
-                ),
-              ),
-              trailing: Icon(
-                Icons.open_in_new_rounded,
-                color: theme.colorScheme.primary,
-              ),
-              onTap: () async {
-                // The app cannot toggle OS notification permission itself, so
-                // this opens the platform settings page and then refreshes.
-                await DeviceSettingsService.openNotificationSettings();
-                await _loadSystemNotificationStatus();
-              },
             ),
           ),
 
@@ -221,7 +288,9 @@ class _SettingScreenState extends State<SettingScreen> {
                     ),
                     title: Text(
                       loc?.translate('language') ?? 'Language',
-                      style: theme.textTheme.titleMedium,
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                     subtitle: Text(
                       localeProvider.currentLocaleName,
@@ -273,38 +342,92 @@ class _SettingScreenState extends State<SettingScreen> {
                 color: theme.dividerColor.withValues(alpha: 0.3),
               ),
             ),
+            clipBehavior: Clip.antiAlias,
             child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 4),
-              child: SwitchListTile.adaptive(
-                secondary: Icon(
-                  _notificationsEnabled
-                      ? Icons.notifications_active_rounded
-                      : Icons.notifications_off_rounded,
-                  color: _notificationsEnabled
-                      ? theme.colorScheme.primary
-                      : theme.colorScheme.onSurfaceVariant,
-                ),
-                title: Text(
-                  loc?.translate('task_reminders') ?? 'Task Reminders',
-                  style: theme.textTheme.titleMedium,
-                ),
-                subtitle: Text(
-                  _notificationsEnabled
-                      ? (loc?.translate('reminders_on_desc') ??
-                            'Get reminded 1 hour before tasks are due')
-                      : (loc?.translate('reminders_off_desc') ??
-                            'No task reminder notifications'),
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
+              padding: const EdgeInsets.all(16.0),
+              child: Row(
+                children: [
+                  Icon(
+                    _notificationsEnabled
+                        ? Icons.notifications_active_rounded
+                        : Icons.notifications_off_rounded,
+                    color: _notificationsEnabled
+                        ? theme.colorScheme.primary
+                        : theme.colorScheme.onSurfaceVariant,
                   ),
-                ),
-                value: _isLoadingNotifPref ? true : _notificationsEnabled,
-                onChanged: _isLoadingNotifPref
-                    ? null
-                    : (value) async {
-                        setState(() => _notificationsEnabled = value);
-                        await taskProvider.updateNotificationPreference(value);
-                      },
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          loc?.translate('task_reminders') ?? 'Task Reminders',
+                          style: theme.textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          _notificationsEnabled
+                              ? (loc?.translate('reminders_on_desc') ??
+                                    'Get reminded 1 hour before tasks are due')
+                              : (loc?.translate('reminders_off_desc') ??
+                                    'No task reminder notifications'),
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Switch.adaptive(
+                    value: _isLoadingNotifPref ? true : _notificationsEnabled,
+                    onChanged: _isLoadingNotifPref
+                        ? null
+                        : (value) async {
+                            final newTargetState = value;
+                            final titleKey = newTargetState
+                                ? 'task_reminders_dialog_title_enable'
+                                : 'task_reminders_dialog_title_disable';
+                            final messageKey = newTargetState
+                                ? 'task_reminders_dialog_message_enable'
+                                : 'task_reminders_dialog_message_disable';
+
+                            final confirmed = await context
+                                .showCustomConfirmDialog(
+                                  title:
+                                      loc?.translate(titleKey) ??
+                                      (newTargetState
+                                          ? 'Enable Task Reminders?'
+                                          : 'Disable Task Reminders?'),
+                                  message: loc?.translate(messageKey) ?? '',
+                                  icon: newTargetState
+                                      ? Icons.notifications_active_rounded
+                                      : Icons.notifications_off_rounded,
+                                  iconColor: newTargetState
+                                      ? theme.colorScheme.primary
+                                      : theme.colorScheme.error,
+                                );
+
+                            if (confirmed == true && context.mounted) {
+                              setState(
+                                () => _notificationsEnabled = newTargetState,
+                              );
+                              await taskProvider.updateNotificationPreference(
+                                newTargetState,
+                              );
+                              if (context.mounted) {
+                                final toastKey = newTargetState
+                                    ? 'task_reminders_activated'
+                                    : 'task_reminders_deactivated';
+                                context.showSuccessToast(toastKey);
+                              }
+                            }
+                          },
+                  ),
+                ],
               ),
             ),
           ),
@@ -319,41 +442,83 @@ class _SettingScreenState extends State<SettingScreen> {
                 color: theme.dividerColor.withValues(alpha: 0.3),
               ),
             ),
+            clipBehavior: Clip.antiAlias,
             child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 4),
-              child: SwitchListTile.adaptive(
-                secondary: Icon(
-                  (_batteryOptimizationDisabled ?? false)
-                      ? Icons.battery_saver_outlined
-                      : Icons.battery_alert_outlined,
-                  color: (_batteryOptimizationDisabled ?? false)
-                      ? theme.colorScheme.primary
-                      : theme.colorScheme.onSurfaceVariant,
-                ),
-                title: Text(
-                  loc?.translate('battery_optimization') ??
-                      'Battery Optimization',
-                  style: theme.textTheme.titleMedium,
-                ),
-                subtitle: Text(
-                  _batteryOptimizationSubtitle(loc),
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
+              padding: const EdgeInsets.all(16.0),
+              child: Row(
+                children: [
+                  Icon(
+                    !(_batteryOptimizationDisabled ?? false)
+                        ? Icons.battery_alert_outlined
+                        : Icons.battery_saver_outlined,
+                    color: !(_batteryOptimizationDisabled ?? false)
+                        ? theme.colorScheme.onSurfaceVariant
+                        : theme.colorScheme.primary,
                   ),
-                ),
-                value: _batteryOptimizationDisabled ?? false,
-                onChanged: _isLoadingBatteryOptimization ||
-                        _batteryOptimizationDisabled == null
-                    ? null
-                    : (_) async {
-                        // Android owns this setting, so we deep-link to system
-                        // settings and refresh the visible status afterward.
-                        await BatteryOptimizationService.openSettings(
-                          requestIgnore:
-                              !(_batteryOptimizationDisabled ?? false),
-                        );
-                        await _loadBatteryOptimizationStatus();
-                      },
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          loc?.translate('battery_optimization') ??
+                              'Battery Optimization',
+                          style: theme.textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          _batteryOptimizationSubtitle(loc),
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Switch.adaptive(
+                    value: !(_batteryOptimizationDisabled ?? false),
+                    onChanged:
+                        _isLoadingBatteryOptimization ||
+                            _batteryOptimizationDisabled == null
+                        ? null
+                        : (value) async {
+                            final newTargetActive = value;
+
+                            final titleKey = newTargetActive
+                                ? 'battery_optimization_dialog_title_enable'
+                                : 'battery_optimization_dialog_title_disable';
+                            final messageKey = newTargetActive
+                                ? 'battery_optimization_dialog_message_enable'
+                                : 'battery_optimization_dialog_message_disable';
+
+                            final confirmed = await context
+                                .showCustomConfirmDialog(
+                                  title:
+                                      loc?.translate(titleKey) ??
+                                      (newTargetActive
+                                          ? 'Enable Battery Optimization?'
+                                          : 'Disable Battery Optimization?'),
+                                  message: loc?.translate(messageKey) ?? '',
+                                  icon: newTargetActive
+                                      ? Icons.battery_alert_outlined
+                                      : Icons.battery_saver_outlined,
+                                  iconColor: newTargetActive
+                                      ? theme.colorScheme.error
+                                      : theme.colorScheme.primary,
+                                );
+
+                            if (confirmed == true && context.mounted) {
+                              await BatteryOptimizationService.openSettings(
+                                requestIgnore: !newTargetActive,
+                              );
+                            }
+                          },
+                  ),
+                ],
               ),
             ),
           ),
@@ -373,7 +538,7 @@ class _SettingScreenState extends State<SettingScreen> {
               label: loc?.translate('delete_all_tasks') ?? 'Delete All Tasks',
               onPressed: () => _handleDeleteAllTasks(context, loc),
               color: AppColors.error,
-              icon: Icons.delete_outline_outlined
+              icon: Icons.delete_outline_outlined,
             ),
           ),
         ],
@@ -397,9 +562,10 @@ class _SettingScreenState extends State<SettingScreen> {
     if (confirmed == true && context.mounted) {
       final taskProvider = context.read<TaskProvider>();
       final authProvider = context.read<AuthProvider>();
-      
+
       await context.withLoading(
-        message: loc?.translate('deleting_all_tasks') ?? 'Deleting all tasks...',
+        message:
+            loc?.translate('deleting_all_tasks') ?? 'Deleting all tasks...',
         future: Future.wait([
           taskProvider.deleteAllTasks(),
           authProvider.resetStreak(),

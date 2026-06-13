@@ -329,7 +329,21 @@ class AppLocalizations {
       "brazil": "Brazil",
       "southafrica": "South Africa",
       "unitedarabemirates": "United Arab Emirates",
-      "singapore": "Singapore"
+      "singapore": "Singapore",
+      "task_reminders_activated": "Task Reminders are active",
+      "task_reminders_deactivated": "Task Reminders are deactive",
+      "battery_optimization_activated": "Battery optimization is active",
+      "battery_optimization_deactivated": "Battery optimization is deactive",
+      "task_reminders_dialog_title_enable": "Enable Task Reminders?",
+      "task_reminders_dialog_message_enable": "Get reminded 1 hour before tasks are due. Would you like to enable task reminders?",
+      "task_reminders_dialog_title_disable": "Disable Task Reminders?",
+      "task_reminders_dialog_message_disable": "No task reminder notifications will be sent. Would you like to disable task reminders?",
+      "battery_optimization_dialog_title_enable": "Enable Battery Optimization?",
+      "battery_optimization_dialog_message_enable": "Battery optimization will be active. This may delay or block task reminders on some Android devices. Enable anyway?",
+      "battery_optimization_dialog_title_disable": "Disable Battery Optimization?",
+      "battery_optimization_dialog_message_disable": "Disable battery optimization to receive task reminders on time without delay. Proceed to system settings?",
+      "notification_access_activated": "Notification access is active",
+      "notification_access_deactivated": "Notification access is deactive"
     },
 
     'hi': {
@@ -645,7 +659,21 @@ class AppLocalizations {
       "brazil": "ब्राज़ील",
       "southafrica": "दक्षिण अफ्रीका",
       "unitedarabemirates": "संयुक्त अरब अमीरात",
-      "singapore": "सिंगापुर"
+      "singapore": "सिंगापुर",
+      "task_reminders_activated": "कार्य अनुस्मारक सक्रिय हैं",
+      "task_reminders_deactivated": "कार्य अनुस्मारक निष्क्रिय हैं",
+      "battery_optimization_activated": "बैटरी अनुकूलन सक्रिय है",
+      "battery_optimization_deactivated": "बैटरी अनुकूलन निष्क्रिय है",
+      "task_reminders_dialog_title_enable": "कार्य अनुस्मारक सक्षम करें?",
+      "task_reminders_dialog_message_enable": "कार्य समाप्त होने से 1 घंटे पहले अनुस्मारक प्राप्त करें। क्या आप कार्य अनुस्मारक सक्षम करना चाहते हैं?",
+      "task_reminders_dialog_title_disable": "कार्य अनुस्मारक अक्षम करें?",
+      "task_reminders_dialog_message_disable": "कोई कार्य अनुस्मारक सूचना नहीं भेजी जाएगी। क्या आप कार्य अनुस्मारक अक्षम करना चाहते हैं?",
+      "battery_optimization_dialog_title_enable": "बैटरी अनुकूलन सक्षम करें?",
+      "battery_optimization_dialog_message_enable": "बैटरी अनुकूलन सक्रिय हो जाएगा। यह कुछ Android उपकरणों पर कार्य अनुस्मारक में देरी या ब्लॉक कर सकता है। फिर भी सक्षम करें?",
+      "battery_optimization_dialog_title_disable": "बैटरी अनुकूलन अक्षम करें?",
+      "battery_optimization_dialog_message_disable": "बिना किसी देरी के समय पर कार्य अनुस्मारक प्राप्त करने के लिए बैटरी अनुकूलन अक्षम करें। सिस्टम सेटिंग्स पर जाएं?",
+      "notification_access_activated": "सूचना पहुंच सक्रिय है",
+      "notification_access_deactivated": "सूचना पहुंच निष्क्रिय है"
     },
   };
 

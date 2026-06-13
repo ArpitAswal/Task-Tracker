@@ -265,7 +265,7 @@ class _MessageManager {
       // ── Same channel already has a message ──
       if (config._priority >= current.config._priority) {
         // Incoming wins (same type → last-wins dedup, or higher priority).
-        _dismissChannel(channel);
+        _dismissChannel(channel, immediate: true);
       } else {
         // Current has higher priority (e.g. error is showing, warning arrives).
         // Drop the incoming message — the user should see the error.
@@ -305,10 +305,16 @@ class _MessageManager {
     }
   }
 
-  void _dismissChannel(_Channel ch) {
+  void _dismissChannel(_Channel ch, {bool immediate = false}) {
     final msg = _channelMessage(ch);
     if (msg != null) {
-      msg.dismiss();
+      if (immediate) {
+        if (msg.entry.mounted) {
+          msg.entry.remove();
+        }
+      } else {
+        msg.dismiss();
+      }
       _setChannel(ch, null);
     }
   }

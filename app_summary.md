@@ -53,14 +53,6 @@ The app uses manual dependency injection through constructors where needed. Prov
 - Localized notification text based on saved language preference.
 - Streak and leaderboard updates tied to task completion behavior.
 
-## Scalability Considerations
-
-- The current architecture is suitable for a single Flutter app with Firebase backend services.
-- User-scoped task subcollections keep Firestore task data naturally partitioned by user.
-- Provider is adequate for the current app size; if features expand substantially, state boundaries should be reviewed before adding more providers.
-- Firestore rules, indexes, and CI should be documented and versioned to support team growth.
-- Tests should be expanded around sync, notification, and auth flows before larger feature work.
-
 ## Current Business Status
 
 The app appears to be at version `1.0.0+1`, with an APK link referenced from the README. CI/CD and formal release automation are not present in the repository.

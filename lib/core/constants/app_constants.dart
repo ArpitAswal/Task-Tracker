@@ -62,6 +62,7 @@ class StorageKeys {
   static const String lastOverdueNotificationDate = 'lastOverdueNotificationDate';
   static const String reminderFrequency = 'reminderFrequency';
   static const String onboardingCompleted = 'onboardingCompleted';
+  static const String systemNotificationsEnabled = 'systemNotificationsEnabled';
 
   // FCM
   static const String fcmToken = 'fcmToken';

@@ -75,6 +75,7 @@ class MyApp extends StatelessWidget {
           return MaterialApp(
             debugShowCheckedModeBanner: false,
             title: AppConstants.appName,
+            restorationScopeId: 'app',
 
             // Theme
             theme: AppTheme.getLightTheme(context),
@@ -108,7 +109,6 @@ class MyApp extends StatelessWidget {
                 // Small phones
                 textScaleFactor = 0.6;
               }
-              print("text scale factor: $textScaleFactor}");
               return MediaQuery(
                 data: mediaQueryData.copyWith(
                   textScaler: TextScaler.linear(textScaleFactor),

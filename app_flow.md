@@ -158,11 +158,3 @@ Android permissions include:
 - Vibration and wake lock
 
 Platform settings are opened through `DeviceSettingsService` using the `task_tracker/device_settings` method channel on Android.
-
-## Payments
-
-No payment flow is currently implemented.
-
-## Notifications From Server
-
-Firebase Messaging is listed as a dependency and Android metadata disables auto-init. The current documented user-facing reminder behavior is local notifications, not a server-push notification flow.
