@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_slider_drawer/flutter_slider_drawer.dart';
@@ -91,21 +92,41 @@ class _HomeDashboardViewState extends State<HomeDashboardView>
   }
 
   Future<void> _checkNotificationPermissionOnStartup() async {
+    // 1. Wait for the screen transition to complete if active
+    if (mounted) {
+      final route = ModalRoute.of(context);
+      if (route != null && route.animation != null && !route.animation!.isCompleted) {
+        final completer = Completer<void>();
+        void listener(AnimationStatus status) {
+          if (status == AnimationStatus.completed) {
+            route.animation!.removeStatusListener(listener);
+            completer.complete();
+          }
+        }
+        route.animation!.addStatusListener(listener);
+        await completer.future;
+      }
+    }
+
     // Check and request notification permission on start (OS prompt if possible)
     final granted = await NotificationService.requestNotificationPermissionsIfNeeded();
     if (!granted && mounted) {
-      final loc = AppLocalizations.of(context);
-      final openSettings = await context.showAlertDialog(
-        title: loc?.translate('notification_permission_title') ?? 'Allow Notifications',
-        message: loc?.translate('notification_permission_message') ??
-            'Task reminders need notification access. You can still save the task, but reminders will not appear until notifications are enabled.',
-        confirmText: loc?.translate('open_settings') ?? 'Open Settings',
-        cancelText: loc?.translate('later') ?? 'Later',
-      );
+      // 2. Wrap dialog presentation in a post-frame callback to ensure Navigator is safe to push
+      WidgetsBinding.instance.addPostFrameCallback((_) async {
+        if (!mounted) return;
+        final loc = AppLocalizations.of(context);
+        final openSettings = await context.showAlertDialog(
+          title: loc?.translate('notification_permission_title') ?? 'Allow Notifications',
+          message: loc?.translate('notification_permission_message') ??
+              'Task reminders need notification access. You can still save the task, but reminders will not appear until notifications are enabled.',
+          confirmText: loc?.translate('open_settings') ?? 'Open Settings',
+          cancelText: loc?.translate('later') ?? 'Later',
+        );
 
-      if (openSettings == true && mounted) {
-        await DeviceSettingsService.openNotificationSettings();
-      }
+        if (openSettings == true && mounted) {
+          await DeviceSettingsService.openNotificationSettings();
+        }
+      });
     }
   }
 
