@@ -45,9 +45,9 @@ class NotificationService {
 
     // iOS / macOS init settings
     const iosSettings = DarwinInitializationSettings(
-      requestAlertPermission: true,
-      requestBadgePermission: true,
-      requestSoundPermission: true,
+      requestAlertPermission: false,
+      requestBadgePermission: false,
+      requestSoundPermission: false,
     );
 
     const settings = InitializationSettings(
@@ -57,37 +57,6 @@ class NotificationService {
 
     await _notifications.initialize(settings);
 
-    // Request permissions on supported mobile platforms so reminder creation
-    // later can rely on a known baseline state.
-    final androidPlugin = _notifications
-        .resolvePlatformSpecificImplementation<
-            AndroidFlutterLocalNotificationsPlugin>();
-    final iosPlugin = _notifications
-        .resolvePlatformSpecificImplementation<
-            IOSFlutterLocalNotificationsPlugin>();
-
-    bool? granted;
-
-    if (Platform.isAndroid) {
-      granted = await androidPlugin?.requestNotificationsPermission();
-      // Exact alarms improve reliability during idle/Doze states on Android.
-      final canScheduleExact =
-          await androidPlugin?.canScheduleExactNotifications();
-      if (canScheduleExact == false) {
-        await androidPlugin?.requestExactAlarmsPermission();
-      }
-    } else if (Platform.isIOS) {
-      granted = await iosPlugin?.requestPermissions(
-        alert: true,
-        badge: true,
-        sound: true,
-      );
-    }
-
-    // Persist permission state in SharedPreferences
-    if (granted == true) {
-      await setNotificationEnabled(true);
-    }
 
     _initialized = true;
     debugPrint('🔔 NotificationService initialized');
@@ -323,6 +292,7 @@ class NotificationService {
   /// 5. Save today's date so it won't fire again until tomorrow
   static Future<void> checkAndNotifyOverdueTasks(List<TaskModel> tasks) async {
     if (!await isNotificationEnabled()) return;
+    if (!await areSystemNotificationsEnabled()) return;
 
     final prefs = await SharedPreferences.getInstance();
     final today = DateTime.now();

@@ -63,6 +63,8 @@ class StorageKeys {
   static const String reminderFrequency = 'reminderFrequency';
   static const String onboardingCompleted = 'onboardingCompleted';
   static const String systemNotificationsEnabled = 'systemNotificationsEnabled';
+  static const String pendingNotificationCheck = 'pendingNotificationCheck';
+  static const String pendingBatteryCheck = 'pendingBatteryCheck';
 
   // FCM
   static const String fcmToken = 'fcmToken';

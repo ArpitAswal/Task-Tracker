@@ -75,7 +75,7 @@ class MyApp extends StatelessWidget {
           return MaterialApp(
             debugShowCheckedModeBanner: false,
             title: AppConstants.appName,
-            restorationScopeId: 'app',
+            // restorationScopeId: 'app',
 
             // Theme
             theme: AppTheme.getLightTheme(context),

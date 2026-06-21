@@ -7,7 +7,7 @@ import 'package:task_tracker/core/localization/app_localizations.dart';
 import 'package:task_tracker/core/utils/extensions/context_extension.dart';
 import 'package:task_tracker/core/utils/extensions/widget_extensions.dart';
 import 'package:task_tracker/core/utils/message_utils.dart';
-import 'package:task_tracker/presentation/providers/locale_provider.dart';
+
 import 'package:task_tracker/presentation/screens/profile/profile_setup.dart';
 
 import '../../../core/routes/app_routes.dart';

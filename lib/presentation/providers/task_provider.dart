@@ -490,7 +490,6 @@ class TaskProvider with ChangeNotifier {
       await NotificationService.checkAndNotifyOverdueTasks(_tasks);
     }
 
-    await loadTasks();
   }
 
   /// Delete all completed tasks

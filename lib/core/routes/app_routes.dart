@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:task_tracker/presentation/screens/auth/email_verification_screen.dart';
 import 'package:task_tracker/presentation/screens/profile/profile_screen.dart';
 import 'package:task_tracker/presentation/screens/profile/profile_setup.dart';
-import 'package:task_tracker/presentation/screens/task/task_screen.dart';
 import '../../presentation/screens/auth/login_screen.dart';
 import '../../presentation/screens/auth/signup_screen.dart';
 import '../../presentation/screens/auth/forgot_password_screen.dart';
