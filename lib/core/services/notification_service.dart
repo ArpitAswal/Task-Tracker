@@ -182,10 +182,10 @@ class NotificationService {
 
   /// Check if notifications are globally enabled
   ///
-  /// Returns `true` if enabled (default), `false` if user disabled them
+  /// Returns `true` if enabled, `false` if user disabled them
   static Future<bool> isNotificationEnabled() async {
     final prefs = await SharedPreferences.getInstance();
-    return prefs.getBool(StorageKeys.notificationEnabled) ?? true;
+    return prefs.getBool(StorageKeys.notificationEnabled) ?? false;
   }
 
   /// Set the global notification enabled/disabled flag

@@ -84,15 +84,15 @@ Widget buildTaskCard(TaskModel task, BuildContext context) {
               extentRatio: 0.25,
               children: [
                 SlidableAction(
-                  onPressed: (context) {
+                  onPressed: (actionContext) {
                     showModalBottomSheet(
-                      context: context,
+                      context: actionContext,
                       isScrollControlled: true,
                       useSafeArea: true,
                       backgroundColor: Theme.of(
                         context,
                       ).scaffoldBackgroundColor,
-                      builder: (context) => AddTaskSheet(
+                      builder: (actionContext) => AddTaskSheet(
                         popupTitle: loc.translate('edit_task'),
                         provider: context.read<TaskProvider>(),
                         task: task,
@@ -116,7 +116,8 @@ Widget buildTaskCard(TaskModel task, BuildContext context) {
         extentRatio: 0.25,
         children: [
           SlidableAction(
-            onPressed: (context) => _showDeleteConfirmation(context, task),
+            onPressed: (actionContext) =>
+                _showDeleteConfirmation(actionContext, task, context),
             backgroundColor: AppColors.error.withValues(alpha: 0.8),
             foregroundColor: Colors.white,
             icon: Icons.delete,
@@ -362,8 +363,9 @@ Widget buildTaskCard(TaskModel task, BuildContext context) {
 }
 
 Future<void> _showDeleteConfirmation(
-  BuildContext context,
+  BuildContext actionContext,
   TaskModel task,
+  BuildContext context,
 ) async {
   /// Capture everything we need from context BEFORE the async gap,
   /// because the Slidable's context will be unmounted after the dialog closes.
@@ -372,7 +374,7 @@ Future<void> _showDeleteConfirmation(
   final successMsg =
       loc?.translate('task_delete') ?? 'Task Deleted Successfully';
 
-  final confirmed = await context.showAlertDialog(
+  final confirmed = await actionContext.showAlertDialog(
     title: loc?.translate('delete_task') ?? '',
     message: loc?.translate('task_delete_confirm') ?? '',
     confirmText: loc?.translate('delete'),
@@ -380,22 +382,20 @@ Future<void> _showDeleteConfirmation(
   );
 
   if (confirmed == true && context.mounted) {
-    try {
-      LoadingOverlay.show(
-        context,
-        message: loc?.translate('deleting_task') ?? '',
-      );
-      final success = await provider.deleteTask(task.id);
-      LoadingOverlay.hide();
+    bool success = false;
+    await context.withLoading(
+      message: loc?.translate('deleting_task') ?? '',
+      future: Future.delayed(
+        const Duration(seconds: 1),
+        () async => success = await provider.deleteTask(task.id),
+      ),
+    );
 
-      if (success && context.mounted) {
-        MessageUtils.showSuccessToastWithOverlay(
-          Overlay.of(context),
-          successMsg,
-        );
-      }
-    } catch (_) {
-      LoadingOverlay.hide();
+    if (success && context.mounted) {
+      MessageUtils.showSuccessToastWithOverlay(Overlay.of(context), successMsg);
+    } else {
+      debugPrint("# AppError:---> ${provider.errorMessage}");
+      context.showErrorToast(provider.errorMessage ?? '');
     }
   }
 }
@@ -424,19 +424,19 @@ Future<void> _taskCompleteConfirmation(
   );
 
   if (confirmed == true && context.mounted) {
-    try {
-      LoadingOverlay.show(
-        context,
-        message: (task.isCompleted == false)
-            ? loc?.translate('completing_task') ?? ''
-            : loc?.translate('in_completing_task') ?? '',
-      );
-      await provider.toggleTaskStatus(task.id);
-      LoadingOverlay.hide();
-      MessageUtils.showSuccessToastWithOverlay(Overlay.of(context), successMsg);
-    } catch (_) {
-      LoadingOverlay.hide();
-    }
+    context.withLoading(
+      message: (task.isCompleted == false)
+          ? loc?.translate('completing_task') ?? ''
+          : loc?.translate('in_completing_task') ?? '',
+      future: Future.delayed(
+        const Duration(seconds: 1),
+        () => provider.toggleTaskStatus(task.id),
+      ),
+    );
+    MessageUtils.showSuccessToastWithOverlay(Overlay.of(context), successMsg);
+  } else {
+    debugPrint("# AppError:---> ${provider.errorMessage}");
+    context.showErrorToast(provider.errorMessage ?? '');
   }
 }
 

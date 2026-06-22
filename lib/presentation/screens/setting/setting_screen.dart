@@ -96,6 +96,7 @@ class _SettingScreenState extends State<SettingScreen>
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (mounted) {
             context.showSuccessToast(toastKey);
+            context.read<TaskProvider>().isSystemOpen();
           }
         });
       }
@@ -575,7 +576,7 @@ class _SettingScreenState extends State<SettingScreen>
                                 if (confirmed == true && context.mounted) {
                                   final storage = StorageService();
                                   await storage.saveBool(StorageKeys.pendingBatteryCheck, true);
-                                  await storage.saveBool('lastBatteryStatus', batteryDisabled ?? false);
+                                  await storage.saveBool('lastBatteryStatus', batteryDisabled);
 
                                   await BatteryOptimizationService.openSettings(
                                     requestIgnore: !newTargetActive,

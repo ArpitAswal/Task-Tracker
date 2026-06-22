@@ -149,14 +149,13 @@ class _AddTaskSheetState extends State<AddTaskSheet> {
       message: isEditing
           ? (l10n?.translate('updating_task') ?? 'Updating Task...')
           : (l10n?.translate('creating_task') ?? 'Creating Task...'),
-      future: operation,
+      future: Future.delayed(const Duration(seconds: 1), () => operation),
     );
 
     if (!mounted) return;
 
     if (success) {
       context.showSuccessToast(isEditing ? 'task_update' : 'task_create');
-      Navigator.of(context).pop();
     } else {
       debugPrint("# AppError:---> ${widget.provider.errorMessage}");
       context.showErrorToast(widget.provider.errorMessage ?? '');
@@ -178,8 +177,7 @@ class _AddTaskSheetState extends State<AddTaskSheet> {
         message:
             l10n?.translate('notification_permission_message') ??
             'Task reminders need notification access. You can still save the task, but reminders will not appear until notifications are enabled.',
-        confirmText:
-            l10n?.translate('open_settings') ?? 'Open Settings',
+        confirmText: l10n?.translate('open_settings') ?? 'Open Settings',
         cancelText: l10n?.translate('later') ?? 'Later',
       );
 
@@ -221,7 +219,9 @@ class _AddTaskSheetState extends State<AddTaskSheet> {
       padding: EdgeInsets.only(
         left: 16,
         right: 16,
-        bottom: context.isTablet ? 16 : MediaQuery.of(context).viewInsets.bottom,
+        bottom: context.isTablet
+            ? 16
+            : MediaQuery.of(context).viewInsets.bottom,
       ),
       child: SingleChildScrollView(
         child: Column(
@@ -547,45 +547,36 @@ class _DatePickerTile extends StatelessWidget {
           builder: (context, child) {
             return Theme(
               data: ThemeData().copyWith(
-                colorScheme: (context.isDarkMode) ?
-                ColorScheme.dark(
-                  primary: context
-                      .theme
-                      .colorScheme
-                      .secondary,
-                  onPrimary:
-                      context.theme.colorScheme.onPrimary,
-                  onSurface: context
-                      .theme
-                      .colorScheme
-                      .secondary,
-                ) : ColorScheme.light(
-                  primary: context
-                      .theme
-                      .colorScheme
-                      .secondary,
-                  onPrimary:
-                  context.theme.colorScheme.onSecondary,
-                  onSurface: context
-                      .theme
-                      .colorScheme
-                      .onPrimary,
-                ),
+                colorScheme: (context.isDarkMode)
+                    ? ColorScheme.dark(
+                        primary: context.theme.colorScheme.secondary,
+                        onPrimary: context.theme.colorScheme.onPrimary,
+                        onSurface: context.theme.colorScheme.secondary,
+                      )
+                    : ColorScheme.light(
+                        primary: context.theme.colorScheme.secondary,
+                        onPrimary: context.theme.colorScheme.onSecondary,
+                        onSurface: context.theme.colorScheme.onPrimary,
+                      ),
                 datePickerTheme: DatePickerThemeData(
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(
                       24.0,
                     ), // Adjust to match your buttons
-                    side: BorderSide(color: context.colorScheme.primary, width: 2.0),
+                    side: BorderSide(
+                      color: context.colorScheme.primary,
+                      width: 2.0,
+                    ),
                   ),
                   cancelButtonStyle: context.theme.textButtonTheme.style,
-                  confirmButtonStyle: context.theme.textButtonTheme.style
+                  confirmButtonStyle: context.theme.textButtonTheme.style,
                 ),
               ),
-              child: Center( // Prevents the picker from stretching to fill the screen
+              child: Center(
+                // Prevents the picker from stretching to fill the screen
                 child: ConstrainedBox(
                   constraints: const BoxConstraints(
-                    maxWidth: 600.0,  // Forces a mobile-like width on tablets
+                    maxWidth: 600.0, // Forces a mobile-like width on tablets
                     maxHeight: 700.0, // Limits the height to reduce the gap
                   ),
                   child: child!,
@@ -635,39 +626,29 @@ class _TimePickerTile extends StatelessWidget {
             return Theme(
               data: ThemeData().copyWith(
                 textTheme: context.textTheme,
-                colorScheme: (context.isDarkMode) ?
-                ColorScheme.dark(
-                  primary: context
-                      .theme
-                      .colorScheme
-                      .secondary,
-                  onPrimary:
-                  context.theme.colorScheme.onPrimary,
-                  onSurface: context
-                      .theme
-                      .colorScheme
-                      .secondary,
-                ) : ColorScheme.light(
-                  primary: context
-                      .theme
-                      .colorScheme
-                      .secondary,
-                  onPrimary:
-                  context.theme.colorScheme.onSecondary,
-                  onSurface: context
-                      .theme
-                      .colorScheme
-                      .onPrimary,
-                ),
+                colorScheme: (context.isDarkMode)
+                    ? ColorScheme.dark(
+                        primary: context.theme.colorScheme.secondary,
+                        onPrimary: context.theme.colorScheme.onPrimary,
+                        onSurface: context.theme.colorScheme.secondary,
+                      )
+                    : ColorScheme.light(
+                        primary: context.theme.colorScheme.secondary,
+                        onPrimary: context.theme.colorScheme.onSecondary,
+                        onSurface: context.theme.colorScheme.onPrimary,
+                      ),
                 datePickerTheme: DatePickerThemeData(
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(
-                        24.0,
-                      ), // Adjust to match your buttons
-                      side: BorderSide(color: context.colorScheme.primary, width: 2.0),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(
+                      24.0,
+                    ), // Adjust to match your buttons
+                    side: BorderSide(
+                      color: context.colorScheme.primary,
+                      width: 2.0,
                     ),
-                    cancelButtonStyle: context.theme.textButtonTheme.style,
-                    confirmButtonStyle: context.theme.textButtonTheme.style
+                  ),
+                  cancelButtonStyle: context.theme.textButtonTheme.style,
+                  confirmButtonStyle: context.theme.textButtonTheme.style,
                 ),
               ),
               child: Center(

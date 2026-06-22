@@ -128,7 +128,9 @@ class TaskRepository {
     }
   }
 
-  Future<List<TaskModel>> getAllTasksForCurrentUser({bool fromLocal = true}) async {
+  Future<List<TaskModel>> getAllTasksForCurrentUser({
+    bool fromLocal = true,
+  }) async {
     final uid = _authUser.currentUser?.uid;
     if (uid == null) return [];
     return getAllTasks(uid, fromLocal: fromLocal);
@@ -299,6 +301,7 @@ class TaskRepository {
       await box.delete(taskId);
     } catch (localErr) {
       debugPrint('Local delete failed (deleteTask): $localErr');
+      throw Exception('Failed to delete the tasks: $localErr');
     }
 
     // Fire-and-forget cloud delete (secondary)
@@ -348,28 +351,34 @@ class TaskRepository {
         await NotificationService.cancelTaskReminder(task.id);
       }
 
-      // 3. Delete from Firestore in batches of 500 to prevent hitting Firestore batch limit
+      // 3. Delete from Firestore in batches of 500 (Fire-and-forget)
       if (allTasks.isNotEmpty) {
-        final List<List<TaskModel>> chunks = [];
-        for (var i = 0; i < allTasks.length; i += 500) {
-          chunks.add(allTasks.sublist(
-            i,
-            i + 500 > allTasks.length ? allTasks.length : i + 500,
-          ));
-        }
+        unawaited(
+          _effect.safeEffect(() async {
+            final List<List<TaskModel>> chunks = [];
+            for (var i = 0; i < allTasks.length; i += 500) {
+              chunks.add(
+                allTasks.sublist(
+                  i,
+                  i + 500 > allTasks.length ? allTasks.length : i + 500,
+                ),
+              );
+            }
 
-        for (final chunk in chunks) {
-          final batch = _firestore.batch();
-          for (final task in chunk) {
-            final docRef = _firestore
-                .collection(FirebaseCollections.tasks)
-                .doc(userId)
-                .collection(FirebaseCollections.userTasks)
-                .doc(task.id);
-            batch.delete(docRef);
-          }
-          await batch.commit();
-        }
+            for (final chunk in chunks) {
+              final batch = _firestore.batch();
+              for (final task in chunk) {
+                final docRef = _firestore
+                    .collection(FirebaseCollections.tasks)
+                    .doc(userId)
+                    .collection(FirebaseCollections.userTasks)
+                    .doc(task.id);
+                batch.delete(docRef);
+              }
+              await batch.commit();
+            }
+          }),
+        );
       }
 
       return allTasks.length;
@@ -391,14 +400,18 @@ class TaskRepository {
     try {
       final localTasks = await getAllTasks(userId, fromLocal: true);
 
-      for (final task in localTasks) {
-        await _firestore
-            .collection(FirebaseCollections.tasks)
-            .doc(userId)
-            .collection(FirebaseCollections.userTasks)
-            .doc(task.id)
-            .set(task.toJson(), SetOptions(merge: true));
-      }
+      unawaited(
+        _effect.safeEffect(() async {
+          for (final task in localTasks) {
+            await _firestore
+                .collection(FirebaseCollections.tasks)
+                .doc(userId)
+                .collection(FirebaseCollections.userTasks)
+                .doc(task.id)
+                .set(task.toJson(), SetOptions(merge: true));
+          }
+        }),
+      );
     } catch (e) {
       throw Exception('Failed to sync to cloud: ${e.toString()}');
     }
@@ -552,15 +565,15 @@ class TaskRepository {
 
   /// Increment the completed tasks count for a specific user
   Future<void> completedTaskCount(String uid, bool isInc) async {
-    try {
-      await _firestore.collection(FirebaseCollections.users).doc(uid).update({
-        'completedTasksCount': (isInc)
-            ? FieldValue.increment(1)
-            : FieldValue.increment(-1),
-      });
-    } catch (e) {
-      debugPrint('Failed to increment completed tasks: $e');
-      // If doc not found, we don't crash, it might be an older user structure
-    }
+    // Fire-and-forget cloud write
+    unawaited(
+      _effect.safeEffect(() async {
+        await _firestore.collection(FirebaseCollections.users).doc(uid).update({
+          'completedTasksCount': (isInc)
+              ? FieldValue.increment(1)
+              : FieldValue.increment(-1),
+        });
+      }),
+    );
   }
 }

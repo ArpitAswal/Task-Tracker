@@ -1,6 +1,8 @@
 // ✨ NEW: Task state management provider
+import 'dart:async';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uuid/uuid.dart';
 import '../../core/constants/enums.dart';
 import '../../core/services/notification_service.dart';
@@ -18,6 +20,7 @@ import '../../data/models/task_model.dart';
 /// - Filtering (pending, completed, overdue)
 /// - Loading states
 /// - Error handling
+/// - Optimistic UI Updates (Instant local changes, background sync)
 class TaskProvider with ChangeNotifier {
   final TaskRepository _taskRepository;
   final _uuid = const Uuid();
@@ -75,23 +78,19 @@ class TaskProvider with ChangeNotifier {
   List<TaskModel> get tasks => _tasks;
 
   /// Get pending tasks
-  // List<TaskModel> get pendingTasks => _pendingTasks;
   List<TaskModel> get pendingTasks =>
       _tasks.where((t) => t.isCompleted == false).toList();
 
   /// Get completed tasks
-  // List<TaskModel> get completedTasks => _completedTasks;
   List<TaskModel> get completedTasks =>
       _tasks.where((t) => t.isCompleted).toList();
 
   /// Get overdue tasks
-  // List<TaskModel> get overdueTasks => _overdueTasks;
   List<TaskModel> get overdueTasks => _tasks
       .where((t) => !t.isCompleted && t.endDate.isBefore(DateTime.now()))
       .toList();
 
   /// Get tasks due today
-  // List<TaskModel> get tasksDueToday => _tasksDueToday;
   List<TaskModel> get tasksDueToday {
     final now = DateTime.now();
     return _tasks
@@ -113,14 +112,19 @@ class TaskProvider with ChangeNotifier {
     switch (_currentFilter) {
       case TaskFilter.all:
         result = List.of(_tasks);
+        break;
       case TaskFilter.pending:
         result = pendingTasks;
+        break;
       case TaskFilter.completed:
         result = completedTasks;
+        break;
       case TaskFilter.overdue:
         result = overdueTasks;
+        break;
       case TaskFilter.dueToday:
         result = tasksDueToday;
+        break;
     }
     return _sortTasks(result);
   }
@@ -157,17 +161,42 @@ class TaskProvider with ChangeNotifier {
   String get descriptionError => _descriptionError;
 
   // ============================================================================
+  // LOCAL FIRST LOGIC
+  // ============================================================================
+
+  /// Instant UI reload from Local Database (Hive)
+  /// APP FLOW: This guarantees the UI updates instantaneously for fast data transition
+  Future<void> _loadLocalTasks() async {
+    if (_userId == null) return;
+    try {
+      _tasks = await _taskRepository.getAllTasks(_userId!, fromLocal: true);
+      debugPrint(
+        '_loadLocalTasks: Successfully loaded ${_tasks.length} local tasks',
+      );
+    } catch (e) {
+      debugPrint('_loadLocalTasks: Error loading local tasks: $e');
+    } finally {
+      notifyListeners();
+    }
+  }
+
+  // ============================================================================
   // INITIALIZATION
   // ============================================================================
 
   /// Initialize provider with user ID
   ///
-  /// [userId] - Current user ID
-  /// [fromLocal] - Whether to load from local storage
-  ///
-  /// Fetches all tasks for the user
+  /// Fetches all tasks for the user instantly from local,
+  /// then syncs with Firebase in the background.
   Future<void> initialize() async {
     _userId = FirebaseAuth.instance.currentUser?.uid;
+    final prefs = await SharedPreferences.getInstance();
+    final savedIndex = prefs.getInt('fallback_tab_index');
+
+    if (savedIndex != null) {
+      setDrawerIndex(3);
+    }
+
     if (_userId == null) {
       _isInitialLoading = false;
       notifyListeners();
@@ -177,73 +206,66 @@ class TaskProvider with ChangeNotifier {
     notifyListeners();
 
     try {
-      // ✨ IMPROVED SYNC LOGIC: Robust ID-Based Two-Way Sync
-      _tasks = await _taskRepository.performRobustSync(_userId!);
+      // APP FLOW: Instantly load local data to show UI
+      await _loadLocalTasks();
 
-      // Check for overdue tasks and show daily notification if needed
+      // APP FLOW: Perform background robust sync. If network is bad, UI doesn't get stuck!
+      unawaited(
+        _taskRepository
+            .performRobustSync(_userId!)
+            .then((tasks) {
+              _tasks = tasks;
+              NotificationService.checkAndNotifyOverdueTasks(_tasks);
+              notifyListeners();
+              debugPrint(
+                'initialize: Successfully synced tasks in background.',
+              );
+            })
+            .catchError((e) {
+              debugPrint('initialize: Background sync failed/offline: $e');
+            }),
+      );
+
+      // Check for overdue tasks using local data immediately
       await NotificationService.checkAndNotifyOverdueTasks(_tasks);
     } catch (e) {
       _errorMessage = e.toString();
+      debugPrint('Error during initialization: $_errorMessage');
     } finally {
       _isInitialLoading = false;
+      // Crucial: Clear it immediately so next clean launch defaults back to 0
+      await prefs.remove('fallback_tab_index');
       notifyListeners();
     }
   }
 
   /// Load all tasks for current user
-  ///
-  /// [fromLocal] - If true, load from Hive; if false, load from Firestore
   Future<void> loadTasks() async {
     if (_userId == null) return;
 
     try {
-      // Perform robust two-way sync
-      _tasks = await _taskRepository.performRobustSync(_userId!);
+      // APP FLOW: Optimistically load from local immediately
+      await _loadLocalTasks();
+      notifyListeners();
 
-      // Filter tasks into categories
-      // await _filterTasks();
+      // APP FLOW: Background Sync. Does not freeze the UI if Firestore is slow/offline.
+      final syncedTasks = await _taskRepository.performRobustSync(_userId!);
+      _tasks = syncedTasks;
+      debugPrint('loadTasks: Successfully performed robust sync.');
     } catch (e) {
-      // Cloud failed → fall back to local
-      try {
-        _tasks = await _taskRepository.getAllTasks(_userId!, fromLocal: true);
-      } catch (localErr) {
-        _setError('Failed to load tasks: ${localErr.toString()}');
-      }
+      debugPrint(
+        'loadTasks: Cloud sync failed, relying on local tasks. Error: $e',
+      );
     } finally {
       notifyListeners();
     }
   }
-
-  /// Filter tasks into categories (pending, completed, overdue, due today)
-  // Future<void> _filterTasks() async {
-  //   if (_userId == null) return;
-  //
-  //   try {
-  //     _pendingTasks = await _taskRepository.getPendingTasks(_userId!);
-  //     _completedTasks = await _taskRepository.getCompletedTasks(_userId!);
-  //     _overdueTasks = await _taskRepository.getOverdueTasks(_userId!);
-  //     _tasksDueToday = await _taskRepository.getTasksDueToday(_userId!);
-  //     notifyListeners();
-  //   } catch (e) {
-  //     debugPrint('Error filtering tasks: ${e.toString()}');
-  //   }
-  // }
 
   // ============================================================================
   // CREATE OPERATIONS
   // ============================================================================
 
   /// Create a new task
-  ///
-  /// [title] - Task title
-  /// [description] - Task description
-  /// [startDate] - Task start date
-  /// [endDate] - Task end date
-  /// [priority] - Task priority (1-3)
-  /// [reminderAt] - Optional precision reminder datetime
-  /// [category] - Optional category
-  /// [context] - Optional context for localized errors
-  ///
   /// Returns: true if successful, false otherwise
   Future<bool> createTask({
     required String title,
@@ -263,7 +285,6 @@ class TaskProvider with ChangeNotifier {
     _clearError();
 
     try {
-      // Create task model
       final task = TaskModel(
         id: _uuid.v4(),
         title: title,
@@ -279,23 +300,22 @@ class TaskProvider with ChangeNotifier {
         isCompleted: false,
       );
 
-      // Save task
+      // APP FLOW: Save to Hive instantly. Firestore handles it in background.
       await _taskRepository.createTask(task);
+      debugPrint('createTask: Successfully created task: ${task.id}');
 
-      // Schedule notification if task has reminder
       if (task.hasReminder) {
         await NotificationService.scheduleTaskReminder(task);
       }
-
-      // Reload tasks
-      await loadTasks();
-
       return true;
     } catch (e) {
       _setError(e.toString());
+      debugPrint('createTask: Error creating task: $e');
       return false;
     } finally {
       _setLoading(false);
+      // APP FLOW: Instant UI update from local storage
+      _loadLocalTasks();
       notifyListeners();
     }
   }
@@ -305,17 +325,6 @@ class TaskProvider with ChangeNotifier {
   // ============================================================================
 
   /// Update an existing task
-  ///
-  /// [taskId] - Task ID to update
-  /// [title] - Updated title (optional)
-  /// [description] - Updated description (optional)
-  /// [startDate] - Updated start date (optional)
-  /// [endDate] - Updated end date (optional)
-  /// [priority] - Updated priority (optional)
-  /// [reminderAt] - Updated reminder datetime (optional)
-  /// [category] - Updated category (optional)
-  /// [context] - Optional context for localized errors
-  ///
   /// Returns: true if successful, false otherwise
   Future<bool> updateTask({required TaskModel updatedTask}) async {
     _setLoading(true);
@@ -323,7 +332,6 @@ class TaskProvider with ChangeNotifier {
     notifyListeners();
 
     try {
-      // Find old task to check if completion status changed
       final oldTaskIndex = _tasks.indexWhere((t) => t.id == updatedTask.id);
       final oldTask = oldTaskIndex != -1 ? _tasks[oldTaskIndex] : updatedTask;
       final bool newlyCompleted =
@@ -331,10 +339,10 @@ class TaskProvider with ChangeNotifier {
       final bool newlyIncomplete =
           oldTask.isCompleted && !updatedTask.isCompleted;
 
-      // Save updated task
+      // APP FLOW: Save locally immediately, syncs to cloud in background
       await _taskRepository.updateTask(updatedTask);
+      debugPrint('updateTask: Successfully updated task: ${updatedTask.id}');
 
-      // Handle Task Status Toggles
       if (newlyCompleted) {
         await _taskRepository.completedTaskCount(updatedTask.userId, true);
         await NotificationService.cancelTaskReminder(updatedTask.id);
@@ -345,22 +353,21 @@ class TaskProvider with ChangeNotifier {
           await NotificationService.scheduleTaskReminder(updatedTask);
         }
       } else {
-        // Status didn't change, just update the reminder if it has one
         if (updatedTask.hasReminder && !updatedTask.isCompleted) {
           await NotificationService.scheduleTaskReminder(updatedTask);
         } else {
           await NotificationService.cancelTaskReminder(updatedTask.id);
         }
       }
-
-      // Reload tasks
-      await loadTasks();
       return true;
     } catch (e) {
       _setError(e.toString());
+      debugPrint('updateTask: Error updating task: $e');
       return false;
     } finally {
       _setLoading(false);
+      // APP FLOW: Instant UI Update from local storage
+      await _loadLocalTasks();
       notifyListeners();
     }
   }
@@ -403,51 +410,59 @@ class TaskProvider with ChangeNotifier {
   // ============================================================================
 
   Future<void> toggleTaskStatus(String taskId) async {
-    final index = _tasks.indexWhere((task) => task.id == taskId);
-    if (index != -1) {
-      final task = _tasks[index];
-      final toggledTask = TaskModel(
-        id: task.id,
-        title: task.title,
-        description: task.description,
-        endDate: task.endDate,
-        userId: task.userId,
-        isCompleted: !task.isCompleted,
-        createdAt: task.createdAt,
-        priority: task.priority,
-        startDate: task.startDate,
-        reminderAt: task.reminderAt,
-        category: task.category,
-        completedAt: task.isCompleted ? null : DateTime.now(),
-      );
+    try {
+      final index = _tasks.indexWhere((task) => task.id == taskId);
+      if (index != -1) {
+        final task = _tasks[index];
+        final toggledTask = TaskModel(
+          id: task.id,
+          title: task.title,
+          description: task.description,
+          endDate: task.endDate,
+          userId: task.userId,
+          isCompleted: !task.isCompleted,
+          createdAt: task.createdAt,
+          priority: task.priority,
+          startDate: task.startDate,
+          reminderAt: task.reminderAt,
+          category: task.category,
+          completedAt: !task.isCompleted ? DateTime.now() : null,
+        );
 
-      await updateTask(updatedTask: toggledTask);
+        // APP FLOW: updateTask handles local save & firestore background sync
+        await updateTask(updatedTask: toggledTask);
+        debugPrint(
+          'toggleTaskStatus: Successfully toggled task status for: $taskId',
+        );
 
-      // If we just marked a task incomplete, check if we need to reverse the streak
-      if (!toggledTask.isCompleted && task.completedAt != null) {
-        final now = DateTime.now();
-        if (task.completedAt!.year == now.year &&
-            task.completedAt!.month == now.month &&
-            task.completedAt!.day == now.day) {
-          // It was completed today, we just marked it incomplete. Are there OTHER tasks completed today?
-          final completedToday = completedTasks
-              .where(
-                (t) =>
-                    t.id != taskId &&
-                    t.completedAt != null &&
-                    t.completedAt!.year == now.year &&
-                    t.completedAt!.month == now.month &&
-                    t.completedAt!.day == now.day,
-              )
-              .toList();
+        if (!toggledTask.isCompleted && task.completedAt != null) {
+          final now = DateTime.now();
+          if (task.completedAt!.year == now.year &&
+              task.completedAt!.month == now.month &&
+              task.completedAt!.day == now.day) {
+            final completedToday = completedTasks
+                .where(
+                  (t) =>
+                      t.id != taskId &&
+                      t.completedAt != null &&
+                      t.completedAt!.year == now.year &&
+                      t.completedAt!.month == now.month &&
+                      t.completedAt!.day == now.day,
+                )
+                .toList();
 
-          if (completedToday.isEmpty) {
-            onTaskIncomplete?.call(false);
-          } else {
-            onTaskIncomplete?.call(true);
+            if (completedToday.isEmpty) {
+              onTaskIncomplete?.call(false);
+            } else {
+              onTaskIncomplete?.call(true);
+            }
           }
         }
       }
+    } catch (e) {
+      debugPrint('toggleTaskStatus: Error toggling task status: $e');
+    } finally {
+      notifyListeners();
     }
   }
 
@@ -456,81 +471,102 @@ class TaskProvider with ChangeNotifier {
   // ============================================================================
 
   /// Delete a task
-  ///
-  /// [taskId] - Task ID to delete
-  /// [context] - Optional context for localized errors
-  ///
-  /// Returns: true if successful, false otherwise
   Future<bool> deleteTask(String taskId) async {
     _setLoading(true);
     _clearError();
     notifyListeners();
 
     try {
-      // Cancel any scheduled notification
       await NotificationService.cancelTaskReminder(taskId);
 
+      // APP FLOW: Deletes locally instantly, schedules cloud delete in background
       await _taskRepository.deleteTask(taskId);
-      await loadTasks();
+      debugPrint('deleteTask: Successfully deleted task: $taskId');
+
       return true;
     } catch (e) {
       _setError(e.toString());
+      debugPrint('deleteTask: Error deleting task: $e');
       return false;
+    } finally {
+      _setLoading(false);
+      // APP FLOW: Instant UI update
+      await _loadLocalTasks();
+      notifyListeners();
+    }
+  }
+
+  Future<void> updateNotificationPreference(bool enabled) async {
+    try {
+      await NotificationService.setNotificationEnabled(enabled);
+
+      if (enabled) {
+        await NotificationService.rescheduleActiveRemindersForCurrentUser();
+        await NotificationService.checkAndNotifyOverdueTasks(_tasks);
+      }
+      debugPrint(
+        'updateNotificationPreference: Successfully updated to $enabled',
+      );
+    } catch (e) {
+      debugPrint(
+        'updateNotificationPreference: Error updating notification preference: $e',
+      );
+    } finally {
+      notifyListeners();
+    }
+  }
+
+  /// Delete all completed tasks
+  Future<int> deleteAllCompletedTasks() async {
+    if (_userId == null) return 0;
+
+    _setLoading(true);
+    _clearError();
+    notifyListeners();
+
+    try {
+      // APP FLOW: Deletes locally instantly, schedules cloud delete in background
+      final count = await _taskRepository.deleteAllCompletedTasks(_userId!);
+      debugPrint(
+        'deleteAllCompletedTasks: Successfully deleted $count completed tasks',
+      );
+
+      // APP FLOW: Instant UI update
+      await _loadLocalTasks();
+      return count;
+    } catch (e) {
+      _setError(e.toString());
+      debugPrint('deleteAllCompletedTasks: Error deleting completed tasks: $e');
+      return 0;
     } finally {
       _setLoading(false);
       notifyListeners();
     }
   }
 
-  Future<void> updateNotificationPreference(bool enabled) async {
-    await NotificationService.setNotificationEnabled(enabled);
-
-    if (enabled) {
-      await NotificationService.rescheduleActiveRemindersForCurrentUser();
-      await NotificationService.checkAndNotifyOverdueTasks(_tasks);
-    }
-
-  }
-
-  /// Delete all completed tasks
-  ///
-  /// Returns: Number of tasks deleted
-  Future<int> deleteAllCompletedTasks() async {
-    if (_userId == null) return 0;
-
-    _setLoading(true);
-    _clearError();
-
-    try {
-      final count = await _taskRepository.deleteAllCompletedTasks(_userId!);
-      await loadTasks();
-      _setLoading(false);
-      return count;
-    } catch (e) {
-      _setError(e.toString());
-      _setLoading(false);
-      return 0;
-    }
-  }
-
   /// Delete all tasks
-  ///
-  /// Returns: Number of tasks deleted
   Future<int> deleteAllTasks() async {
     if (_userId == null) return 0;
 
     _setLoading(true);
     _clearError();
+    notifyListeners();
 
     try {
+      // APP FLOW: Deletes locally instantly, schedules cloud batch delete in background
       final count = await _taskRepository.deleteAllTasks(_userId!);
-      await loadTasks();
-      _setLoading(false);
+      debugPrint('deleteAllTasks: Successfully deleted all $count tasks');
+
+      // APP FLOW: Instant UI update
+      await _loadLocalTasks();
       return count;
     } catch (e) {
       _setError(e.toString());
-      _setLoading(false);
+      debugPrint('deleteAllTasks: Error deleting all tasks: $e');
       return 0;
+    } finally {
+      _setLoading(false);
+      notifyListeners();
     }
   }
 
@@ -538,19 +574,11 @@ class TaskProvider with ChangeNotifier {
   // FILTER & SEARCH OPERATIONS
   // ============================================================================
 
-  /// Set task filter
-  ///
-  /// [filter] - Filter to apply
   void setFilter(TaskFilter filter) {
     _currentFilter = filter;
     notifyListeners();
   }
 
-  /// Search tasks by title
-  ///
-  /// [query] - Search query
-  ///
-  /// Returns: List of tasks matching query
   List<TaskModel> searchTasks(String query) {
     if (query.isEmpty) return _tasks;
 
@@ -561,30 +589,14 @@ class TaskProvider with ChangeNotifier {
     }).toList();
   }
 
-  /// Filter tasks by priority
-  ///
-  /// [priority] - Priority level (1-3)
-  ///
-  /// Returns: List of tasks with specified priority
   List<TaskModel> filterByPriority(int priority) {
     return _tasks.where((task) => task.priority.index == priority).toList();
   }
 
-  /// Filter tasks by category
-  ///
-  /// [category] - Category name
-  ///
-  /// Returns: List of tasks in category
   List<TaskModel> filterByCategory(String category) {
     return _tasks.where((task) => task.category.name == category).toList();
   }
 
-  /// Get tasks by date range
-  ///
-  /// [startDate] - Start date
-  /// [endDate] - End date
-  ///
-  /// Returns: List of tasks within date range
   List<TaskModel> getTasksByDateRange(DateTime startDate, DateTime endDate) {
     return _tasks.where((task) {
       return task.startDate.isAfter(
@@ -598,18 +610,17 @@ class TaskProvider with ChangeNotifier {
   // STATISTICS
   // ============================================================================
 
-  /// Get task statistics
-  ///
-  /// Returns: Map with task counts
   Future<Map<String, int>> getStatistics() async {
     if (_userId == null) {
       return {'total': 0, 'completed': 0, 'pending': 0, 'overdue': 0};
     }
 
     try {
-      return await _taskRepository.getTaskStatistics(_userId!);
+      final stats = await _taskRepository.getTaskStatistics(_userId!);
+      debugPrint('getStatistics: Successfully fetched statistics');
+      return stats;
     } catch (e) {
-      debugPrint('Error getting statistics: ${e.toString()}');
+      debugPrint('getStatistics: Error getting statistics: $e');
       return {'total': 0, 'completed': 0, 'pending': 0, 'overdue': 0};
     }
   }
@@ -618,32 +629,28 @@ class TaskProvider with ChangeNotifier {
   // HELPER METHODS
   // ============================================================================
 
-  /// Set loading state
   void _setLoading(bool value) {
     _isLoading = value;
-    notifyListeners();
+    // Note: Don't notifyListeners here directly to prevent redundant calls.
+    // Callers are expected to call notifyListeners() in finally blocks.
   }
 
-  /// Set error message
   void _setError(String error) {
     _errorMessage = error;
-    notifyListeners();
+    // Callers will notifyListeners() in finally block
   }
 
-  /// Clear error message
   void _clearError() {
     _errorMessage = null;
     _titleError = "";
     _descriptionError = "";
   }
 
-  /// Clear error manually
   void clearError() {
     _clearError();
     notifyListeners();
   }
 
-  ///Set the Drawer Index
   void setDrawerIndex(int ind) {
     _drawerIndex.value = ind;
   }
@@ -663,16 +670,34 @@ class TaskProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  /// Reset provider state
   void reset() {
-    _tasks = [];
-    _isLoading = false;
-    _isInitialLoading = true;
-    _errorMessage = null;
-    _userId = null;
-    _currentFilter = TaskFilter.all;
-    _drawerIndex.value = 0;
-    NotificationService.cancelAllReminders();
-    notifyListeners();
+    try {
+      _tasks = [];
+      _isLoading = false;
+      _isInitialLoading = true;
+      _errorMessage = null;
+      _userId = null;
+      _currentFilter = TaskFilter.all;
+      _drawerIndex.value = 0;
+      NotificationService.cancelAllReminders();
+      debugPrint('reset: Successfully reset task provider state');
+    } catch (e) {
+      debugPrint('reset: Error resetting state: $e');
+    } finally {
+      notifyListeners();
+    }
+  }
+
+  // Inside your Settings Screen (Index 3)
+  Future<void> isSystemOpen() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setInt('fallback_tab_index', 3);
+      debugPrint('isSystemOpen: Successfully set fallback tab index');
+    } catch (e) {
+      debugPrint('isSystemOpen: Error setting fallback index: $e');
+    } finally {
+      notifyListeners();
+    }
   }
 }
