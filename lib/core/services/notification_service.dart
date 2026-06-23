@@ -322,11 +322,12 @@ class NotificationService {
 
     // Show the general overdue notification
     try {
+      int overdue = overdueTasks.length;
       await _notifications.show(
         _overdueNotificationId,
         loc.translate('notification_overdue_title'),
         loc.translate('notification_overdue_msg')
-            .replaceAll('{count}', overdueTasks.length.toString()),
+            .replaceAll('{count}', overdue.toString()).replaceAll('{task}', (overdue > 1) ? loc.translate('tasks') : loc.translate('task')),
         const NotificationDetails(
           android: AndroidNotificationDetails(
             AppConstants.notificationChannelId,

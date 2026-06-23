@@ -96,6 +96,7 @@ Widget buildTaskCard(TaskModel task, BuildContext context) {
                         popupTitle: loc.translate('edit_task'),
                         provider: context.read<TaskProvider>(),
                         task: task,
+                        isBottomSheet: true,
                       ),
                     );
                   },
@@ -391,12 +392,13 @@ Future<void> _showDeleteConfirmation(
       ),
     );
 
-    if (success && context.mounted) {
+    if(context.mounted){
+    if (success) {
       MessageUtils.showSuccessToastWithOverlay(Overlay.of(context), successMsg);
     } else {
       debugPrint("# AppError:---> ${provider.errorMessage}");
       context.showErrorToast(provider.errorMessage ?? '');
-    }
+    }}
   }
 }
 
@@ -434,9 +436,6 @@ Future<void> _taskCompleteConfirmation(
       ),
     );
     MessageUtils.showSuccessToastWithOverlay(Overlay.of(context), successMsg);
-  } else {
-    debugPrint("# AppError:---> ${provider.errorMessage}");
-    context.showErrorToast(provider.errorMessage ?? '');
   }
 }
 

@@ -15,7 +15,7 @@ import '../../../providers/task_provider.dart';
 class AddTaskSheet extends StatefulWidget {
   final String popupTitle;
   final TaskModel? task;
-
+  final bool isBottomSheet;
   /// ✨ Optional task for editing
   final TaskProvider provider;
 
@@ -24,6 +24,7 @@ class AddTaskSheet extends StatefulWidget {
     required this.popupTitle,
     required this.provider,
     this.task,
+    this.isBottomSheet = false,
   });
 
   @override
@@ -221,7 +222,7 @@ class _AddTaskSheetState extends State<AddTaskSheet> {
         right: 16,
         bottom: context.isTablet
             ? 16
-            : MediaQuery.of(context).viewInsets.bottom,
+             : (widget.isBottomSheet ? MediaQuery.of(context).viewInsets.bottom : 16),
       ),
       child: SingleChildScrollView(
         child: Column(
@@ -237,7 +238,7 @@ class _AddTaskSheetState extends State<AddTaskSheet> {
                   controller: _titleController,
                   label: l10n?.taskTitleLabel ?? "Task Label",
                   error: provider.titleError,
-                  maxLength: 20,
+                  maxLength: 25,
                 );
               },
             ),

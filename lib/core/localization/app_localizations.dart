@@ -43,6 +43,8 @@ class AppLocalizations {
       'work': 'Work',
       'update': 'Update',
       'create': 'Create',
+      'tasks': 'Tasks',
+      'task': 'Task',
 
       // Authentication
       'login': 'Login',
@@ -142,7 +144,6 @@ class AppLocalizations {
       'due_date': 'Due Date',
       'finish_time': 'End Of Task Time',
       'reminder_time': 'Task Reminder Time',
-      'task': 'Task',
       'task_create': 'Task Created Successfully',
       'task_update': 'Task Updated Successfully',
       'task_delete': 'Task Deleted Successfully',
@@ -176,7 +177,7 @@ class AppLocalizations {
       'notification_task_ended': 'Task Timeframe Ended',
       'notification_task_ended_msg': 'The scheduled timeframe for "{taskTitle}" has ended',
       'notification_overdue_title': 'Overdue Tasks',
-      'notification_overdue_msg': 'You have {count} overdue task(s). Complete them to stay on track!',
+      'notification_overdue_msg': 'You have {count} overdue {task}. Complete them to stay on track!',
 
       // Leaderboard
       'leaderboard': 'Leaderboard',
@@ -374,6 +375,8 @@ class AppLocalizations {
       'work': 'काम',
       'update': 'अद्यतन',
       'create': 'निर्माण',
+      'tasks': 'कार्य',
+      'task': 'कार्य',
 
       // Authentication
       'login': 'लॉगिन',
@@ -471,7 +474,6 @@ class AppLocalizations {
       'task_title_label': 'आप क्या योजना बना रहे हैं? 😇',
       'task_description_label': 'कार्य का विवरण लिखें 📝',
       'due_date': 'देय तिथि',
-      'task': 'कार्य',
       'task_create': 'कार्य सफलतापूर्वक निर्मित हो गया',
       'task_update': 'कार्य सफलतापूर्वक अद्यतन किया गया',
       'task_delete': 'कार्य सफलतापूर्वक हटा दिया गया',
