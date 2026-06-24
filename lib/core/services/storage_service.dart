@@ -1,4 +1,5 @@
 // ✅ CORRECTED: Proper Singleton implementation with Hive support
+import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:hive_flutter/hive_flutter.dart';
@@ -41,8 +42,6 @@ class StorageService {
   late final FlutterSecureStorage _secureStorage;
   late final SharedPreferences _prefs;
   bool _initialized = false;
-  Box<TaskModel>? _taskBox;
-  String? _currentUid;
 
   // ============================================================================
   // INITIALIZATION
@@ -111,9 +110,9 @@ class StorageService {
       _prefs = await SharedPreferences.getInstance();
 
       _initialized = true;
-      print('✅ StorageService initialized successfully');
+      debugPrint('✅ StorageService initialized successfully');
     } catch (e) {
-      print('❌ StorageService initialization failed: $e');
+      debugPrint('❌ StorageService initialization failed: $e');
       rethrow;
     }
   }
@@ -297,31 +296,10 @@ class StorageService {
   }
 
   /// Called AFTER login success
-  Future<void> openUserBoxes(String uid) async {
-    if (_currentUid == uid && _taskBox != null) return;
-
-    // Close previous user's box if exists
-    if (_taskBox != null && _taskBox!.isOpen) {
-      await _taskBox!.close();
-    }
-
-    final name = "${AppConstants.taskBox}_$uid";
-
-    if (!Hive.isBoxOpen(name)) {
-      _taskBox = await Hive.openBox<TaskModel>(name);
-    } else {
-      _taskBox = Hive.box<TaskModel>(name);
-    }
-
-    _currentUid = uid;
-  }
+  Future<void> openUserBoxes(String uid) async {}
 
   /// Called on logout
-  Future<void> closeUserBoxes() async {
-    await _taskBox?.close();
-    _taskBox = null;
-    _currentUid = null;
-  }
+  Future<void> closeUserBoxes() async {}
 
   // ============================================================================
   // COMBINED CLEAR METHOD
@@ -336,12 +314,9 @@ class StorageService {
       await _secureStorage.deleteAll();
       await _prefs.clear();
       await Hive.box(AppConstants.userBox).clear();
-      if (_taskBox != null && _taskBox!.isOpen) {
-        await _taskBox!.clear();
-      }
       await Hive.box(AppConstants.settingsBox).clear();
     } catch (e) {
-      print('⚠️ clearAll encountered an error: $e');
+      debugPrint('⚠️ clearAll encountered an error: $e');
     }
   }
 }

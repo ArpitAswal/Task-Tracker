@@ -73,6 +73,13 @@ class _HomeDashboardViewState extends State<HomeDashboardView>
   }
 
   @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _authProvider.checkStreakDecay();
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     _localizations = AppLocalizations.of(context);
     final theme = Theme.of(context);

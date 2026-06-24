@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:task_tracker/core/localization/app_localizations.dart';
 import 'package:task_tracker/core/utils/loading_overlay.dart';
+import 'package:task_tracker/presentation/providers/task_provider.dart';
 
 import '../../../core/constants/app_constants.dart';
 import '../../../core/routes/app_routes.dart';
@@ -79,9 +80,10 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
           );
 
           if (mounted) {
-            if(_authProvider.userData == null && _authProvider.errorMessage == 'not-found') {
+            if (_authProvider.userData == null &&
+                _authProvider.errorMessage == 'not-found') {
               AppRoutes.navigateAndRemoveUntil(context, AppRoutes.profileSetup);
-            } else{
+            } else {
               AppRoutes.navigateAndRemoveUntil(context, AppRoutes.home);
             }
           }
@@ -158,9 +160,13 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
                   onPressed: () {
                     runningTimer?.cancel();
                     _authProvider.logout();
-                    if (!mounted) return;
-                    // Navigate to login
-                    AppRoutes.navigateAndRemoveUntil(context, AppRoutes.login);
+                    if (context.mounted) {
+                      context.read<TaskProvider>().reset();
+                      AppRoutes.navigateAndRemoveUntil(
+                        context,
+                        AppRoutes.login,
+                      );
+                    }
                   },
                   label: loc?.anotherAccount ?? "Use another account",
                 ),

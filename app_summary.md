@@ -14,7 +14,7 @@ The app helps users keep track of tasks even when connectivity is unreliable. It
 - First-run onboarding.
 - Task CRUD with priority, category, due date, and reminder time.
 - Search, filtering, sorting, pending/completed/overdue/due-today views.
-- Offline Hive persistence with Firestore synchronization.
+- Firestore Native Offline Persistence caching for fast, offline-capable task tracking.
 - Local task reminders, end-of-task notifications, and daily overdue summaries.
 - Theme switching between system, light, and dark.
 - English and Hindi localization.
@@ -27,7 +27,7 @@ The app helps users keep track of tasks even when connectivity is unreliable. It
 - Flutter and Dart
 - Provider for state management
 - Firebase Core, Firebase Auth, Cloud Firestore, Firebase Messaging dependency
-- Hive and Hive Flutter for local data
+- Hive and Hive Flutter for User Model local storage
 - SharedPreferences for app settings
 - Flutter Secure Storage for saved credentials
 - flutter_local_notifications for local notifications
@@ -46,8 +46,7 @@ The app uses manual dependency injection through constructors where needed. Prov
 
 ## Challenges Solved
 
-- Offline task availability through user-scoped Hive boxes.
-- Cloud reconciliation by comparing local and Firestore task IDs and timestamps.
+- Offline task availability leveraging Firestore's Native Offline SQLite caching.
 - Timezone-aware local reminders.
 - Android exact alarm and battery optimization constraints.
 - Localized notification text based on saved language preference.

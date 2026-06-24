@@ -15,9 +15,13 @@ class AuthProvider with ChangeNotifier {
   final AuthRepository _authRepository;
   final StorageService _storageService;
 
-  AuthProvider({AuthRepository? authRepository, StorageService? storageService})
-    : _authRepository = authRepository ?? AuthRepository(),
-      _storageService = storageService ?? StorageService();
+  AuthProvider({
+    AuthRepository? authRepository,
+    StorageService? storageService,
+    FirebaseAuth? firebaseAuth,
+  })  : _authRepository = authRepository ?? AuthRepository(),
+        _storageService = storageService ?? StorageService(),
+        _firebaseAuth = firebaseAuth;
 
   // State variables
   UserModel? _userData;
@@ -44,7 +48,7 @@ class AuthProvider with ChangeNotifier {
     _setLoading(true);
 
     try {
-      _firebaseAuth = FirebaseAuth.instance;
+      _firebaseAuth ??= FirebaseAuth.instance;
       // Check if user is logged in
       _isLoggedIn = await _authRepository.isLoggedIn();
       _lan = await getLanguage();
@@ -61,6 +65,7 @@ class AuthProvider with ChangeNotifier {
         if (user != null) {
           await _storageService.openUserBoxes(user.uid);
           _userData = await _authRepository.getUserData(user.uid);
+          await checkStreakDecay();
         }
       }
     } catch (e) {
@@ -199,6 +204,7 @@ class AuthProvider with ChangeNotifier {
       if (_userData == null) {
         throw 'user-profile-error';
       }
+      await checkStreakDecay();
       return true;
     } catch (e) {
       _setError(e.toString());
@@ -267,6 +273,8 @@ class AuthProvider with ChangeNotifier {
     _setLoading(true);
 
     try {
+      _leaderboardSub?.cancel();
+      _leaderboardSub = null;
       await _authRepository.signOut();
       _userData = null;
       notifyListeners();
@@ -363,7 +371,10 @@ class AuthProvider with ChangeNotifier {
         lastActive.month,
         lastActive.day,
       );
-      final diff = today.difference(lastDate).inDays;
+      
+      final todayUtc = DateTime.utc(today.year, today.month, today.day);
+      final lastActiveUtc = DateTime.utc(lastDate.year, lastDate.month, lastDate.day);
+      final diff = todayUtc.difference(lastActiveUtc).inDays;
 
       if (diff == 0) {
         // Already counted today — no-op
@@ -444,7 +455,7 @@ class AuthProvider with ChangeNotifier {
           ? _userData!.currentStreak - 1
           : 0;
       DateTime? newLastActiveDate = newStreak > 0
-          ? today.subtract(const Duration(days: 1))
+          ? DateTime(today.year, today.month, today.day - 1)
           : null;
 
       try {
@@ -463,6 +474,43 @@ class AuthProvider with ChangeNotifier {
         notifyListeners();
       } catch (e) {
         debugPrint('Failed to decrement streak: $e');
+      }
+    }
+  }
+
+  /// Checks if the user's streak has expired (more than 1 day of inactivity)
+  /// and updates both Firestore and local state to 0 if so.
+  Future<void> checkStreakDecay() async {
+    if (_userData == null || _userData!.lastActiveDate == null || _userData!.currentStreak == 0) {
+      return;
+    }
+
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final lastActive = _userData!.lastActiveDate!;
+    final lastActiveDate = DateTime(lastActive.year, lastActive.month, lastActive.day);
+
+    final todayUtc = DateTime.utc(today.year, today.month, today.day);
+    final lastActiveUtc = DateTime.utc(lastActiveDate.year, lastActiveDate.month, lastActiveDate.day);
+
+    final diff = todayUtc.difference(lastActiveUtc).inDays;
+
+    if (diff > 1) {
+      try {
+        await _authRepository.updateUserProfileData(
+          uid: _userData!.uid,
+          data: {
+            'currentStreak': 0,
+          },
+        );
+
+        _userData = _userData!.copyWith(
+          currentStreak: 0,
+        );
+        notifyListeners();
+        debugPrint('Streak decayed to 0: lastActive = $lastActiveDate, today = $today');
+      } catch (e) {
+        debugPrint('Failed to decay streak: $e');
       }
     }
   }

@@ -89,16 +89,29 @@ class _SettingScreenState extends State<SettingScreen>
       _systemNotificationsEnabled.value = enabled;
       _isLoadingSystemNotifications.value = false;
 
-      if (isPendingCheck && wasEnabled != null && wasEnabled != enabled) {
-        final toastKey = enabled
-            ? 'notification_access_activated'
-            : 'notification_access_deactivated';
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (mounted) {
-            context.showSuccessToast(toastKey);
-            context.read<TaskProvider>().isSystemOpen();
-          }
-        });
+      if (wasEnabled != null && wasEnabled != enabled) {
+        if (isPendingCheck) {
+          final toastKey = enabled
+              ? 'notification_access_activated'
+              : 'notification_access_deactivated';
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) {
+              context.showSuccessToast(toastKey);
+              context.read<TaskProvider>().isSystemOpen();
+            }
+          });
+        }
+        
+        // ✨ NEW: Reschedule reminders if OS permission was just granted
+        if (enabled && _notificationsEnabled.value) {
+          WidgetsBinding.instance.addPostFrameCallback((_) async {
+            await NotificationService.rescheduleActiveRemindersForCurrentUser();
+            if (mounted) {
+              final tasks = context.read<TaskProvider>().tasks;
+              await NotificationService.checkAndNotifyOverdueTasks(tasks);
+            }
+          });
+        }
       }
     }
 

@@ -13,7 +13,7 @@ Task Tracker is a Flutter productivity app for managing personal tasks with offl
 - Email/password authentication with verification flow
 - Onboarding for first-time users
 - Task CRUD with categories, priorities, and reminder times
-- Offline-first storage with Hive plus Firestore sync
+- Offline-first storage leveraging Firestore Native Offline cache
 - Theme switching: System, Light, Dark
 - Localization: English and Hindi
 - Profile, streaks, and leaderboard
@@ -51,8 +51,7 @@ Task Tracker is a Flutter productivity app for managing personal tasks with offl
 - Delete all tasks
 
 ### Persistence and Sync
-- Hive for local task caching
-- Firestore for cloud sync
+- Firestore for Cloud Sync and Native Offline Persistence
 - SharedPreferences for user preferences
 - Secure storage for sensitive saved credentials
 
@@ -145,7 +144,7 @@ Example local `secrets.json` shape:
 - Provider
 - Firebase Auth
 - Cloud Firestore
-- Hive
+- Hive (for user profile cache)
 - SharedPreferences
 - Flutter Secure Storage
 - flutter_local_notifications

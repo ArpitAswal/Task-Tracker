@@ -3,12 +3,9 @@ import 'dart:async';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/foundation.dart';
-import 'package:hive/hive.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/services/notification_service.dart';
 import '../../core/services/storage_service.dart';
-import '../../core/utils/exception_handling/effect_bus.dart';
 import '../models/task_model.dart';
 
 /// Repository for task data operations
@@ -20,8 +17,6 @@ import '../models/task_model.dart';
 /// - Data synchronization between local and cloud
 class TaskRepository {
   final FirebaseFirestore _firestore;
-  final StorageService _storageService;
-  final EffectBus _effect;
   final FirebaseAuth _authUser;
 
   /// Constructor with dependency injection
@@ -30,11 +25,8 @@ class TaskRepository {
   TaskRepository({
     FirebaseFirestore? firestore,
     StorageService? storageService,
-    EffectBus? effect,
     FirebaseAuth? authUser,
   }) : _firestore = firestore ?? FirebaseFirestore.instance,
-       _storageService = storageService ?? StorageService(),
-       _effect = effect ?? EffectBus.instance,
        _authUser = authUser ?? FirebaseAuth.instance;
 
   // ============================================================================
@@ -44,39 +36,19 @@ class TaskRepository {
   /// Create a new task
   ///
   /// [task] - Task model to create
-  /// [context] - Optional context for localized errors
   ///
   /// Returns: Created task with updated timestamps
-  /// Throws: Exception with error message
-  ///
-  /// Process:
-  /// 1. Save to local Hive database (offline support)
-  /// 2. Sync to Firebase Firestore (cloud backup)
   Future<TaskModel> createTask(TaskModel task) async {
     // Update timestamps
     final newTask = task.copyWith(updatedAt: DateTime.now());
 
-    // Await local write (primary) — must succeed or be caught gracefully
-    try {
-      final box = await Hive.openBox<TaskModel>(
-        "${AppConstants.taskBox}_${task.userId}",
-      );
-      await box.put(newTask.id, newTask);
-    } catch (localErr) {
-      debugPrint('Local save failed (createTask): $localErr');
-    }
-
-    // Fire-and-forget cloud write (secondary)
-    unawaited(
-      _effect.safeEffect(
-        () => _firestore
-            .collection(FirebaseCollections.tasks)
-            .doc(newTask.userId)
-            .collection(FirebaseCollections.userTasks)
-            .doc(newTask.id)
-            .set(newTask.toJson()),
-      ),
-    );
+    // Fire-and-forget cloud write (Firestore handles offline caching automatically)
+    _firestore
+        .collection(FirebaseCollections.tasks)
+        .doc(newTask.userId)
+        .collection(FirebaseCollections.userTasks)
+        .doc(newTask.id)
+        .set(newTask.toJson());
 
     return newTask;
   }
@@ -85,68 +57,52 @@ class TaskRepository {
   // READ OPERATIONS
   // ============================================================================
 
+  /// Get a stream of all tasks for a specific user
+  Stream<List<TaskModel>> tasksStream(String userId) {
+    return _firestore
+        .collection(FirebaseCollections.tasks)
+        .doc(userId)
+        .collection(FirebaseCollections.userTasks)
+        .orderBy('priority', descending: true)
+        .orderBy('endDate', descending: true)
+        .snapshots()
+        .map(
+          (snapshot) =>
+              snapshot.docs.map((doc) => TaskModel.fromFirestore(doc)).toList(),
+        );
+  }
+
   /// Get all tasks for a specific user
   ///
   /// [userId] - User ID to fetch tasks for
-  /// [fromLocal] - If true, fetch from Hive; if false, fetch from Firestore
   ///
   /// Returns: List of tasks
-  Future<List<TaskModel>> getAllTasks(
-    String userId, {
-    bool fromLocal = true,
-  }) async {
+  Future<List<TaskModel>> getAllTasks(String userId) async {
     try {
-      if (fromLocal) {
-        // Fetch from Hive (offline)
-        final box = _storageService.getTypedBox<TaskModel>(
-          "${AppConstants.taskBox}_$userId",
-        );
-        final tasks = box.values
-            .whereType<TaskModel>()
-            .where((task) => task.userId == userId)
-            .toList();
+      // Fetch from Firestore (online/offline handled automatically by SDK cache)
+      final snapshot = await _firestore
+          .collection(FirebaseCollections.tasks)
+          .doc(userId)
+          .collection(FirebaseCollections.userTasks)
+          .orderBy('priority', descending: true)
+          .orderBy('endDate', descending: true)
+          .get();
 
-        // Sort by end date (newest first)
-        tasks.sort((a, b) => b.endDate.compareTo(a.endDate));
-        return tasks;
-      } else {
-        // Fetch from Firestore (online)
-        final snapshot = await _firestore
-            .collection(FirebaseCollections.tasks)
-            .doc(userId)
-            .collection(FirebaseCollections.userTasks)
-            .orderBy('priority', descending: true) // Sort by priority
-            .orderBy('endDate', descending: true) // Sort by end Date of task
-            .get();
-
-        return snapshot.docs
-            .map((doc) => TaskModel.fromFirestore(doc))
-            .toList();
-      }
+      return snapshot.docs.map((doc) => TaskModel.fromFirestore(doc)).toList();
     } catch (e) {
       throw Exception('Failed to fetch tasks: ${e.toString()}');
     }
   }
 
-  Future<List<TaskModel>> getAllTasksForCurrentUser({
-    bool fromLocal = true,
-  }) async {
+  Future<List<TaskModel>> getAllTasksForCurrentUser() async {
     final uid = _authUser.currentUser?.uid;
     if (uid == null) return [];
-    return getAllTasks(uid, fromLocal: fromLocal);
+    return getAllTasks(uid);
   }
 
   /// Get pending tasks (not completed and not overdue)
-  ///
-  /// [userId] - User ID to fetch tasks for
-  /// [fromLocal] - If true, fetch from Hive; if false, fetch from Firestore
-  ///
-  /// Returns: List of pending tasks
-  Future<List<TaskModel>> getPendingTasks(
-    String userId, {
-    bool fromLocal = true,
-  }) async {
-    final allTasks = await getAllTasks(userId, fromLocal: fromLocal);
+  Future<List<TaskModel>> getPendingTasks(String userId) async {
+    final allTasks = await getAllTasks(userId);
     final now = DateTime.now();
 
     return allTasks
@@ -159,78 +115,40 @@ class TaskRepository {
   }
 
   /// Get completed tasks
-  ///
-  /// [userId] - User ID to fetch tasks for
-  /// [fromLocal] - If true, fetch from Hive; if false, fetch from Firestore
-  ///
-  /// Returns: List of completed tasks
-  Future<List<TaskModel>> getCompletedTasks(
-    String userId, {
-    bool fromLocal = true,
-  }) async {
-    final allTasks = await getAllTasks(userId, fromLocal: fromLocal);
+  Future<List<TaskModel>> getCompletedTasks(String userId) async {
+    final allTasks = await getAllTasks(userId);
     return allTasks.where((task) => task.isCompleted).toList();
   }
 
   /// Get overdue tasks (not completed and past due date)
-  ///
-  /// [userId] - User ID to fetch tasks for
-  /// [fromLocal] - If true, fetch from Hive; if false, fetch from Firestore
-  ///
-  /// Returns: List of overdue tasks
-  Future<List<TaskModel>> getOverdueTasks(
-    String userId, {
-    bool fromLocal = true,
-  }) async {
-    final allTasks = await getAllTasks(userId, fromLocal: fromLocal);
+  Future<List<TaskModel>> getOverdueTasks(String userId) async {
+    final allTasks = await getAllTasks(userId);
     return allTasks.where((task) => task.isOverdue).toList();
   }
 
   /// Get tasks due today
-  ///
-  /// [userId] - User ID to fetch tasks for
-  /// [fromLocal] - If true, fetch from Hive; if false, fetch from Firestore
-  ///
-  /// Returns: List of tasks due today
-  Future<List<TaskModel>> getTasksDueToday(
-    String userId, {
-    bool fromLocal = true,
-  }) async {
-    final allTasks = await getAllTasks(userId, fromLocal: fromLocal);
+  Future<List<TaskModel>> getTasksDueToday(String userId) async {
+    final allTasks = await getAllTasks(userId);
     return allTasks
         .where((task) => !task.isCompleted && task.isDueToday)
         .toList();
   }
 
   /// Get a single task by ID
-  ///
-  /// [taskId] - Task ID to fetch
-  /// [fromLocal] - If true, fetch from Hive; if false, fetch from Firestore
-  ///
-  /// Returns: Task model or null if not found
-  Future<TaskModel?> getTaskById(String taskId, {bool fromLocal = true}) async {
+  Future<TaskModel?> getTaskById(String taskId) async {
     final uid = _authUser.currentUser?.uid;
     if (uid == null) throw Exception('User not authenticated');
 
     try {
-      if (fromLocal) {
-        // Fetch from Hive
-        final box = _storageService.getTypedBox<TaskModel>(
-          "${AppConstants.taskBox}_$uid",
-        );
-        return box.get(taskId);
-      } else {
-        // Fetch from Firestore
-        final doc = await _firestore
-            .collection(FirebaseCollections.tasks)
-            .doc(uid)
-            .collection(FirebaseCollections.userTasks)
-            .doc(taskId)
-            .get();
+      final doc = await _firestore
+          .collection(FirebaseCollections.tasks)
+          .doc(uid)
+          .collection(FirebaseCollections.userTasks)
+          .doc(taskId)
+          .get();
 
-        if (!doc.exists) return null;
-        return TaskModel.fromFirestore(doc);
-      }
+      if (!doc.exists) return null;
+      return TaskModel.fromFirestore(doc);
     } catch (e) {
       throw Exception('Failed to fetch task: ${e.toString()}');
     }
@@ -241,12 +159,6 @@ class TaskRepository {
   // ============================================================================
 
   /// Update an existing task
-  ///
-  /// [task] - Updated task model
-  /// [context] - Optional context for localized errors
-  ///
-  /// Returns: Updated task
-  /// Throws: Exception with error message
   Future<TaskModel> updateTask(TaskModel task) async {
     final uid = _authUser.currentUser?.uid;
     if (uid == null) throw Exception('User not authenticated');
@@ -254,27 +166,13 @@ class TaskRepository {
     // Update timestamp
     final updatedTask = task.copyWith(updatedAt: DateTime.now());
 
-    // Await local write (primary)
-    try {
-      final box = _storageService.getTypedBox<TaskModel>(
-        "${AppConstants.taskBox}_$uid",
-      );
-      await box.put(updatedTask.id, updatedTask);
-    } catch (localErr) {
-      debugPrint('Local save failed (updateTask): $localErr');
-    }
-
-    // Fire-and-forget cloud write (secondary)
-    unawaited(
-      _effect.safeEffect(
-        () => _firestore
-            .collection(FirebaseCollections.tasks)
-            .doc(uid)
-            .collection(FirebaseCollections.userTasks)
-            .doc(updatedTask.id)
-            .update(updatedTask.toJson()),
-      ),
-    );
+    // Fire-and-forget cloud write (Firestore handles offline caching automatically)
+    _firestore
+        .collection(FirebaseCollections.tasks)
+        .doc(uid)
+        .collection(FirebaseCollections.userTasks)
+        .doc(updatedTask.id)
+        .update(updatedTask.toJson());
 
     return updatedTask;
   }
@@ -284,44 +182,20 @@ class TaskRepository {
   // ============================================================================
 
   /// Delete a task
-  ///
-  /// [taskId] - Task ID to delete
-  /// [context] - Optional context for localized errors
-  ///
-  /// Throws: Exception with error message
   Future<void> deleteTask(String taskId) async {
     final uid = _authUser.currentUser?.uid;
     if (uid == null) throw Exception('User not authenticated');
 
-    // Await local delete (primary)
-    try {
-      final box = _storageService.getTypedBox<TaskModel>(
-        "${AppConstants.taskBox}_$uid",
-      );
-      await box.delete(taskId);
-    } catch (localErr) {
-      debugPrint('Local delete failed (deleteTask): $localErr');
-      throw Exception('Failed to delete the tasks: $localErr');
-    }
-
-    // Fire-and-forget cloud delete (secondary)
-    unawaited(
-      _effect.safeEffect(
-        () => _firestore
-            .collection(FirebaseCollections.tasks)
-            .doc(uid)
-            .collection(FirebaseCollections.userTasks)
-            .doc(taskId)
-            .delete(),
-      ),
-    );
+    // Fire-and-forget cloud delete (Firestore handles offline caching automatically)
+    _firestore
+        .collection(FirebaseCollections.tasks)
+        .doc(uid)
+        .collection(FirebaseCollections.userTasks)
+        .doc(taskId)
+        .delete();
   }
 
   /// Delete all completed tasks for a user
-  ///
-  /// [userId] - User ID to delete tasks for
-  ///
-  /// Returns: Number of tasks deleted
   Future<int> deleteAllCompletedTasks(String userId) async {
     try {
       final completedTasks = await getCompletedTasks(userId);
@@ -338,47 +212,37 @@ class TaskRepository {
 
   Future<int> deleteAllTasks(String userId) async {
     try {
-      final allTasks = await getAllTasks(userId, fromLocal: true);
+      final allTasks = await getAllTasks(userId);
 
-      // 1. Clear Hive local box
-      final box = _storageService.getTypedBox<TaskModel>(
-        "${AppConstants.taskBox}_$userId",
-      );
-      await box.clear();
-
-      // 2. Cancel notifications for each task
+      // Cancel notifications for each task
       for (final task in allTasks) {
         await NotificationService.cancelTaskReminder(task.id);
       }
 
-      // 3. Delete from Firestore in batches of 500 (Fire-and-forget)
+      // Delete from Firestore in batches of 500 (Fire-and-forget)
       if (allTasks.isNotEmpty) {
-        unawaited(
-          _effect.safeEffect(() async {
-            final List<List<TaskModel>> chunks = [];
-            for (var i = 0; i < allTasks.length; i += 500) {
-              chunks.add(
-                allTasks.sublist(
-                  i,
-                  i + 500 > allTasks.length ? allTasks.length : i + 500,
-                ),
-              );
-            }
+        final List<List<TaskModel>> chunks = [];
+        for (var i = 0; i < allTasks.length; i += 500) {
+          chunks.add(
+            allTasks.sublist(
+              i,
+              i + 500 > allTasks.length ? allTasks.length : i + 500,
+            ),
+          );
+        }
 
-            for (final chunk in chunks) {
-              final batch = _firestore.batch();
-              for (final task in chunk) {
-                final docRef = _firestore
-                    .collection(FirebaseCollections.tasks)
-                    .doc(userId)
-                    .collection(FirebaseCollections.userTasks)
-                    .doc(task.id);
-                batch.delete(docRef);
-              }
-              await batch.commit();
-            }
-          }),
-        );
+        for (final chunk in chunks) {
+          final batch = _firestore.batch();
+          for (final task in chunk) {
+            final docRef = _firestore
+                .collection(FirebaseCollections.tasks)
+                .doc(userId)
+                .collection(FirebaseCollections.userTasks)
+                .doc(task.id);
+            batch.delete(docRef);
+          }
+          await batch.commit();
+        }
       }
 
       return allTasks.length;
@@ -390,149 +254,6 @@ class TaskRepository {
   // ============================================================================
   // SYNC OPERATIONS
   // ============================================================================
-
-  /// Sync local tasks to Firestore
-  ///
-  /// [userId] - User ID to sync tasks for
-  ///
-  /// Uploads all local tasks to Firestore (for backup)
-  Future<void> syncLocalToCloud(String userId) async {
-    try {
-      final localTasks = await getAllTasks(userId, fromLocal: true);
-
-      unawaited(
-        _effect.safeEffect(() async {
-          for (final task in localTasks) {
-            await _firestore
-                .collection(FirebaseCollections.tasks)
-                .doc(userId)
-                .collection(FirebaseCollections.userTasks)
-                .doc(task.id)
-                .set(task.toJson(), SetOptions(merge: true));
-          }
-        }),
-      );
-    } catch (e) {
-      throw Exception('Failed to sync to cloud: ${e.toString()}');
-    }
-  }
-
-  /// Sync cloud tasks to local storage
-  ///
-  /// [userId] - User ID to sync tasks for
-  ///
-  /// Downloads all tasks from Firestore to Hive
-  Future<List<TaskModel>> syncCloudToLocal(String userId) async {
-    try {
-      final cloudTasks = await getAllTasks(userId, fromLocal: false);
-      final box = _storageService.getTypedBox<TaskModel>(
-        "${AppConstants.taskBox}_$userId",
-      );
-
-      for (final task in cloudTasks) {
-        await box.put(task.id, task);
-      }
-      return cloudTasks;
-    } catch (e) {
-      throw Exception('Failed to sync from cloud: ${e.toString()}');
-    }
-  }
-
-  /// Perform a robust two-way synchronization between local and cloud tasks
-  ///
-  /// [userId] - User ID to sync tasks for
-  ///
-  /// Returns: Merged and up-to-date List of tasks
-  Future<List<TaskModel>> performRobustSync(String userId) async {
-    try {
-      // 1. Fetch both datasets
-      final localTasks = await getAllTasks(userId, fromLocal: true);
-      final cloudTasks = await getAllTasks(userId, fromLocal: false);
-
-      // 2. Create Maps for O(1) lookups by ID
-      final localMap = {for (final task in localTasks) task.id: task};
-      final cloudMap = {for (final task in cloudTasks) task.id: task};
-
-      final box = _storageService.getTypedBox<TaskModel>(
-        "${AppConstants.taskBox}_$userId",
-      );
-
-      final WriteBatch batch = _firestore.batch();
-      bool hasCloudUpdates = false;
-
-      // 3. Process Cloud Tasks (What exists in cloud)
-      for (final cloudTask in cloudTasks) {
-        final localTask = localMap[cloudTask.id];
-
-        if (localTask == null) {
-          // Exists in cloud but not local -> Add/Update locally
-          await box.put(cloudTask.id, cloudTask);
-        } else {
-          // Exists in both -> Check timestamps to see which is newer
-          // Add a 1-minute buffer to prevent constant overwriting on minor differences
-          if (cloudTask.updatedAt != null && localTask.updatedAt != null) {
-            final difference = cloudTask.updatedAt!
-                .difference(localTask.updatedAt!)
-                .abs();
-
-            if (difference > const Duration(minutes: 1)) {
-              if (cloudTask.updatedAt!.isAfter(localTask.updatedAt!)) {
-                // Cloud is newer -> Update Locally
-                await box.put(cloudTask.id, cloudTask);
-              } else if (localTask.updatedAt!.isAfter(cloudTask.updatedAt!)) {
-                // Local is newer -> Update Cloud
-                final docRef = _firestore
-                    .collection(FirebaseCollections.tasks)
-                    .doc(userId)
-                    .collection(FirebaseCollections.userTasks)
-                    .doc(localTask.id);
-                batch.set(docRef, localTask.toJson(), SetOptions(merge: true));
-                hasCloudUpdates = true;
-              }
-            }
-          } else if (cloudTask.updatedAt != null &&
-              localTask.updatedAt == null) {
-            await box.put(cloudTask.id, cloudTask);
-          } else if (localTask.updatedAt != null &&
-              cloudTask.updatedAt == null) {
-            final docRef = _firestore
-                .collection(FirebaseCollections.tasks)
-                .doc(userId)
-                .collection(FirebaseCollections.userTasks)
-                .doc(localTask.id);
-            batch.set(docRef, localTask.toJson(), SetOptions(merge: true));
-            hasCloudUpdates = true;
-          }
-        }
-      }
-
-      // 4. Process Local Tasks (What exists locally but NOT in cloud)
-      for (final localTask in localTasks) {
-        if (!cloudMap.containsKey(localTask.id)) {
-          // Create in cloud
-          final docRef = _firestore
-              .collection(FirebaseCollections.tasks)
-              .doc(userId)
-              .collection(FirebaseCollections.userTasks)
-              .doc(localTask.id);
-          batch.set(docRef, localTask.toJson(), SetOptions(merge: true));
-          hasCloudUpdates = true;
-        }
-      }
-
-      // 5. Commit batch to Firestore if there were any changes to push
-      if (hasCloudUpdates) {
-        await batch.commit();
-      }
-
-      // 6. Return the finalized synced local list
-      return await getAllTasks(userId, fromLocal: true);
-    } catch (e) {
-      debugPrint("Robust sync failed: $e");
-      // Fallback: If sync fails (e.g., offline), just return local tasks
-      return await getAllTasks(userId, fromLocal: true);
-    }
-  }
 
   // ============================================================================
   // STATISTICS
@@ -566,14 +287,10 @@ class TaskRepository {
   /// Increment the completed tasks count for a specific user
   Future<void> completedTaskCount(String uid, bool isInc) async {
     // Fire-and-forget cloud write
-    unawaited(
-      _effect.safeEffect(() async {
-        await _firestore.collection(FirebaseCollections.users).doc(uid).update({
-          'completedTasksCount': (isInc)
-              ? FieldValue.increment(1)
-              : FieldValue.increment(-1),
-        });
-      }),
-    );
+    _firestore.collection(FirebaseCollections.users).doc(uid).update({
+      'completedTasksCount': (isInc)
+          ? FieldValue.increment(1)
+          : FieldValue.increment(-1),
+    });
   }
 }

@@ -33,6 +33,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
     if (_authProvider.userData == null) {
       _showWarningDelayed();
     }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _authProvider.checkStreakDecay();
+    });
   }
 
   Future<void> _showWarningDelayed() async {
@@ -106,6 +109,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     return _buildStatisticsSection(
                       context,
                       taskProvider,
+                      user,
                       theme,
                       loc,
                     );
@@ -528,9 +532,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Widget _buildStatisticsSection(
     BuildContext context,
     TaskProvider taskProvider,
+    UserModel user,
     ThemeData theme,
     AppLocalizations? loc,
   ) {
+    final spacing = (context.screenWidth * (context.isTablet ? 0.04 : 0.03));
     return Container(
       decoration: BoxDecoration(borderRadius: BorderRadius.circular(16)),
       padding: const EdgeInsets.symmetric(horizontal: 8),
@@ -563,7 +569,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
           const SizedBox(height: 20),
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Expanded(
                 child: _buildStatItem(
@@ -573,9 +578,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   theme,
                 ),
               ),
-              SizedBox(
-                width: (context.screenWidth * (context.isTablet ? 0.14 : 0.08)),
-              ),
+              SizedBox(width: spacing),
               Expanded(
                 child: _buildStatItem(
                   loc?.translate('pending_label') ?? 'Pending',
@@ -584,14 +587,25 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   theme,
                 ),
               ),
-              SizedBox(
-                width: (context.screenWidth * (context.isTablet ? 0.14 : 0.08)),
-              ),
+            ],
+          ),
+          SizedBox(height: spacing),
+          Row(
+            children: [
               Expanded(
                 child: _buildStatItem(
                   loc?.translate('completed_label') ?? 'Completed',
                   taskProvider.completedTasks.length.toString(),
                   AppColors.success,
+                  theme,
+                ),
+              ),
+              SizedBox(width: spacing),
+              Expanded(
+                child: _buildStatItem(
+                  loc?.translate('lifetime_completed') ?? 'Lifetime Completed',
+                  user.completedTasksCount.toString(),
+                  AppColors.info,
                   theme,
                 ),
               ),

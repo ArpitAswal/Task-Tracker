@@ -305,6 +305,7 @@ class AppLocalizations {
       'longest_streak': 'Longest Streak',
       'day_streak': 'day',
       'days_streak': 'days',
+      'lifetime_completed': 'Lifetime Completed',
       'start_rank': 'Start Rank',
       'end_rank': 'End Rank',
       'exit_app_title': 'Exit App',
@@ -638,6 +639,7 @@ class AppLocalizations {
       'longest_streak': 'सबसे लंबी स्ट्रीक',
       'day_streak': 'दिन',
       'days_streak': 'दिन',
+      'lifetime_completed': 'आजीवन पूर्ण',
       'exit_app_title': 'ऐप से बाहर निकलें',
       'exit_app_msg': 'क्या आप वाकई बाहर निकलना चाहते हैं?',
 

@@ -24,6 +24,7 @@ import '../../data/models/task_model.dart';
 class TaskProvider with ChangeNotifier {
   final TaskRepository _taskRepository;
   final _uuid = const Uuid();
+  StreamSubscription<List<TaskModel>>? _taskSubscription;
 
   /// Callback invoked when a task is completed (for streak updates)
   VoidCallback? onTaskCompleted;
@@ -53,6 +54,9 @@ class TaskProvider with ChangeNotifier {
 
   /// Current user ID
   String? _userId;
+  
+  /// Ensures we only trigger reschedule after initial data sync once
+  bool _hasInitialSyncCompleted = false;
 
   /// Selected task filter
   TaskFilter _currentFilter = TaskFilter.all;
@@ -73,6 +77,12 @@ class TaskProvider with ChangeNotifier {
   // ============================================================================
   // GETTERS
   // ============================================================================
+
+  @override
+  void dispose() {
+    _taskSubscription?.cancel();
+    super.dispose();
+  }
 
   /// Get all tasks
   List<TaskModel> get tasks => _tasks;
@@ -160,25 +170,7 @@ class TaskProvider with ChangeNotifier {
   String get titleError => _titleError;
   String get descriptionError => _descriptionError;
 
-  // ============================================================================
-  // LOCAL FIRST LOGIC
-  // ============================================================================
 
-  /// Instant UI reload from Local Database (Hive)
-  /// APP FLOW: This guarantees the UI updates instantaneously for fast data transition
-  Future<void> _loadLocalTasks() async {
-    if (_userId == null) return;
-    try {
-      _tasks = await _taskRepository.getAllTasks(_userId!, fromLocal: true);
-      debugPrint(
-        '_loadLocalTasks: Successfully loaded ${_tasks.length} local tasks',
-      );
-    } catch (e) {
-      debugPrint('_loadLocalTasks: Error loading local tasks: $e');
-    } finally {
-      notifyListeners();
-    }
-  }
 
   // ============================================================================
   // INITIALIZATION
@@ -186,8 +178,7 @@ class TaskProvider with ChangeNotifier {
 
   /// Initialize provider with user ID
   ///
-  /// Fetches all tasks for the user instantly from local,
-  /// then syncs with Firebase in the background.
+  /// Listens to Firestore stream which instantly returns local cache then syncs
   Future<void> initialize() async {
     _userId = FirebaseAuth.instance.currentUser?.uid;
     final prefs = await SharedPreferences.getInstance();
@@ -199,66 +190,55 @@ class TaskProvider with ChangeNotifier {
 
     if (_userId == null) {
       _isInitialLoading = false;
+      _taskSubscription?.cancel();
       notifyListeners();
       return;
     }
+    
     _isInitialLoading = true;
+    _hasInitialSyncCompleted = false;
     notifyListeners();
 
     try {
-      // APP FLOW: Instantly load local data to show UI
-      await _loadLocalTasks();
-
-      // APP FLOW: Perform background robust sync. If network is bad, UI doesn't get stuck!
-      unawaited(
-        _taskRepository
-            .performRobustSync(_userId!)
-            .then((tasks) {
-              _tasks = tasks;
-              NotificationService.checkAndNotifyOverdueTasks(_tasks);
-              notifyListeners();
-              debugPrint(
-                'initialize: Successfully synced tasks in background.',
-              );
-            })
-            .catchError((e) {
-              debugPrint('initialize: Background sync failed/offline: $e');
-            }),
+      _taskSubscription?.cancel();
+      _taskSubscription = _taskRepository.tasksStream(_userId!).listen(
+        (tasks) async {
+          _tasks = tasks;
+          
+          if (!_hasInitialSyncCompleted) {
+            _hasInitialSyncCompleted = true;
+            // ✨ NEW: Reschedule active reminders upon completing initial sync!
+            await NotificationService.rescheduleActiveRemindersForCurrentUser();
+          }
+          
+          await NotificationService.checkAndNotifyOverdueTasks(_tasks);
+          
+          _isInitialLoading = false;
+          notifyListeners();
+        },
+        onError: (e) {
+          _errorMessage = e.toString();
+          _isInitialLoading = false;
+          debugPrint('Stream error: $_errorMessage');
+          notifyListeners();
+        },
       );
-
-      // Check for overdue tasks using local data immediately
-      await NotificationService.checkAndNotifyOverdueTasks(_tasks);
     } catch (e) {
       _errorMessage = e.toString();
-      debugPrint('Error during initialization: $_errorMessage');
-    } finally {
       _isInitialLoading = false;
+      debugPrint('Error during initialization: $_errorMessage');
+      notifyListeners();
+    } finally {
       // Crucial: Clear it immediately so next clean launch defaults back to 0
       await prefs.remove('fallback_tab_index');
-      notifyListeners();
     }
   }
 
   /// Load all tasks for current user
   Future<void> loadTasks() async {
     if (_userId == null) return;
-
-    try {
-      // APP FLOW: Optimistically load from local immediately
-      await _loadLocalTasks();
-      notifyListeners();
-
-      // APP FLOW: Background Sync. Does not freeze the UI if Firestore is slow/offline.
-      final syncedTasks = await _taskRepository.performRobustSync(_userId!);
-      _tasks = syncedTasks;
-      debugPrint('loadTasks: Successfully performed robust sync.');
-    } catch (e) {
-      debugPrint(
-        'loadTasks: Cloud sync failed, relying on local tasks. Error: $e',
-      );
-    } finally {
-      notifyListeners();
-    }
+    // With streams, loadTasks is effectively handled automatically.
+    // We can just rely on the stream.
   }
 
   // ============================================================================
@@ -300,7 +280,7 @@ class TaskProvider with ChangeNotifier {
         isCompleted: false,
       );
 
-      // APP FLOW: Save to Hive instantly. Firestore handles it in background.
+      // APP FLOW: Save to Firestore instantly. Stream updates UI.
       await _taskRepository.createTask(task);
       debugPrint('createTask: Successfully created task: ${task.id}');
 
@@ -314,8 +294,6 @@ class TaskProvider with ChangeNotifier {
       return false;
     } finally {
       _setLoading(false);
-      // APP FLOW: Instant UI update from local storage
-      _loadLocalTasks();
       notifyListeners();
     }
   }
@@ -366,8 +344,6 @@ class TaskProvider with ChangeNotifier {
       return false;
     } finally {
       _setLoading(false);
-      // APP FLOW: Instant UI Update from local storage
-      await _loadLocalTasks();
       notifyListeners();
     }
   }
@@ -490,8 +466,6 @@ class TaskProvider with ChangeNotifier {
       return false;
     } finally {
       _setLoading(false);
-      // APP FLOW: Instant UI update
-      await _loadLocalTasks();
       notifyListeners();
     }
   }
@@ -531,8 +505,6 @@ class TaskProvider with ChangeNotifier {
         'deleteAllCompletedTasks: Successfully deleted $count completed tasks',
       );
 
-      // APP FLOW: Instant UI update
-      await _loadLocalTasks();
       return count;
     } catch (e) {
       _setError(e.toString());
@@ -557,8 +529,6 @@ class TaskProvider with ChangeNotifier {
       final count = await _taskRepository.deleteAllTasks(_userId!);
       debugPrint('deleteAllTasks: Successfully deleted all $count tasks');
 
-      // APP FLOW: Instant UI update
-      await _loadLocalTasks();
       return count;
     } catch (e) {
       _setError(e.toString());
@@ -672,6 +642,7 @@ class TaskProvider with ChangeNotifier {
 
   void reset() {
     try {
+      _taskSubscription?.cancel();
       _tasks = [];
       _isLoading = false;
       _isInitialLoading = true;

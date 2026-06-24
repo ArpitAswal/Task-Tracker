@@ -77,10 +77,10 @@ Important current-state note: named routes for task list/detail/add/edit exist, 
 
 ## Offline And Sync Flow
 
-1. User task operations write locally to Hive where possible.
-2. Firestore writes run as cloud sync/backup.
-3. On provider initialization and task loading, `TaskRepository.performRobustSync` compares local and cloud records by ID and timestamp.
-4. If cloud access fails, the app falls back to local Hive tasks.
+1. User task operations write immediately to the local Firestore Native cache.
+2. The UI is instantly updated via a Firestore `snapshots()` stream.
+3. Firestore automatically synchronizes the local cache with the cloud database in the background when the network is available.
+4. If cloud access fails or the device is offline, operations continue to work locally and will sync later.
 
 ## Notification Flow
 
