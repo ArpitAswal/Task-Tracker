@@ -50,7 +50,7 @@ class _AddTaskSheetState extends State<AddTaskSheet> {
     _descriptionController = TextEditingController(text: task?.description);
 
     final now = DateTime.now();
-    _selectedDate = task?.endDate ?? now.add(const Duration(days: 1));
+    _selectedDate = task?.endDate ?? now;
     _reminderAt =
         task?.reminderAt ?? _selectedDate.subtract(const Duration(hours: 1));
 
@@ -96,12 +96,6 @@ class _AddTaskSheetState extends State<AddTaskSheet> {
     } else if (_reminderAt.isBefore(now)) {
       context.showErrorToast(
         l10n?.translate('reminder_passed') ?? "Reminder time passed",
-      );
-      valid = false;
-    } else if (_selectedDate.difference(_reminderAt).inMinutes < 10) {
-      context.showErrorToast(
-        l10n?.translate('reminder_gap') ??
-            "Reminder time must be at least 10 minutes before task finish time",
       );
       valid = false;
     }
@@ -274,43 +268,45 @@ class _AddTaskSheetState extends State<AddTaskSheet> {
               date: _selectedDate,
               onPick: (d) => setState(() {
                 _selectedDate = d;
-                _reminderAt = _selectedDate.subtract(const Duration(hours: 1));
+                _reminderAt = DateTime(
+                  d.year,
+                  d.month,
+                  d.day,
+                  _reminderAt.hour,
+                  _reminderAt.minute,
+                );
               }),
             ),
 
-            if (_selectedDate.year == DateTime.now().year &&
-                _selectedDate.month == DateTime.now().month &&
-                _selectedDate.day == DateTime.now().day) ...[
-              const SizedBox(height: 8),
-              _TimePickerTile(
-                title: l10n?.translate('finish_time') ?? 'End Of Task Time',
-                time: TimeOfDay.fromDateTime(_selectedDate),
-                onPick: (t) => setState(() {
-                  _selectedDate = DateTime(
-                    _selectedDate.year,
-                    _selectedDate.month,
-                    _selectedDate.day,
-                    t.hour,
-                    t.minute,
-                  );
-                }),
-              ),
-              const SizedBox(height: 8),
-              _TimePickerTile(
-                title:
-                    l10n?.translate('reminder_time') ?? 'RTask Reminder Time',
-                time: TimeOfDay.fromDateTime(_reminderAt),
-                onPick: (t) => setState(() {
-                  _reminderAt = DateTime(
-                    _selectedDate.year,
-                    _selectedDate.month,
-                    _selectedDate.day,
-                    t.hour,
-                    t.minute,
-                  );
-                }),
-              ),
-            ],
+            const SizedBox(height: 8),
+            _TimePickerTile(
+              title: l10n?.translate('finish_time') ?? 'End Of Task Time',
+              time: TimeOfDay.fromDateTime(_selectedDate),
+              onPick: (t) => setState(() {
+                _selectedDate = DateTime(
+                  _selectedDate.year,
+                  _selectedDate.month,
+                  _selectedDate.day,
+                  t.hour,
+                  t.minute,
+                );
+              }),
+            ),
+            const SizedBox(height: 8),
+            _TimePickerTile(
+              title:
+                  l10n?.translate('reminder_time') ?? 'Task Reminder Time',
+              time: TimeOfDay.fromDateTime(_reminderAt),
+              onPick: (t) => setState(() {
+                _reminderAt = DateTime(
+                  _selectedDate.year,
+                  _selectedDate.month,
+                  _selectedDate.day,
+                  t.hour,
+                  t.minute,
+                );
+              }),
+            ),
 
             const SizedBox(height: 12),
 
@@ -587,8 +583,7 @@ class _DatePickerTile extends StatelessWidget {
           },
         );
         if (picked != null) {
-          DateTime now = DateTime.now();
-          onPick(picked.copyWith(hour: now.hour, minute: now.minute));
+          onPick(picked.copyWith(hour: date.hour, minute: date.minute));
         }
       },
     );

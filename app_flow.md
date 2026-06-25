@@ -73,7 +73,6 @@ Users can:
 
 Task creation/editing validates reminder timing so reminders are in the future and before the task finish time.
 
-Important current-state note: named routes for task list/detail/add/edit exist, but currently render placeholder screens. The live task flow is handled inside the dashboard and task popup/widgets.
 
 ## Offline And Sync Flow
 
