@@ -27,7 +27,10 @@ class ThemeProvider with ChangeNotifier {
     if (_themeMode == mode) return;
 
     _themeMode = mode;
-    await _prefs.setString(StorageKeys.themeMode, _getStringFromThemeMode(mode));
+    await _prefs.setString(
+      StorageKeys.themeMode,
+      _getStringFromThemeMode(mode),
+    );
     notifyListeners();
   }
 
@@ -65,7 +68,6 @@ class ThemeProvider with ChangeNotifier {
       case ThemeMode.dark:
         return 'dark';
       case ThemeMode.system:
-      default:
         return 'system';
     }
   }
@@ -77,7 +79,6 @@ class ThemeProvider with ChangeNotifier {
       case ThemeMode.dark:
         return ThemeType.dark;
       case ThemeMode.system:
-      default:
         return ThemeType.system;
     }
   }

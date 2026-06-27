@@ -305,6 +305,10 @@ class AppLocalizations {
       'longest_streak': 'Longest Streak',
       'day_streak': 'day',
       'days_streak': 'days',
+      // Task card status chip labels
+      'reminder_fired': 'Reminder Sent',
+      'due_soon': 'Due Soon',
+      'days_left': 'left',
       'lifetime_completed': 'Lifetime Completed',
       'start_rank': 'Start Rank',
       'end_rank': 'End Rank',
@@ -639,6 +643,10 @@ class AppLocalizations {
       'longest_streak': 'सबसे लंबी स्ट्रीक',
       'day_streak': 'दिन',
       'days_streak': 'दिन',
+      // Task card status chip labels
+      'reminder_fired': 'अनुस्मारक भेजा गया',
+      'due_soon': 'जल्द होगा',
+      'days_left': 'बाकी',
       'lifetime_completed': 'आजीवन पूर्ण',
       'exit_app_title': 'ऐप से बाहर निकलें',
       'exit_app_msg': 'क्या आप वाकई बाहर निकलना चाहते हैं?',
