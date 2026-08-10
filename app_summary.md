@@ -12,15 +12,17 @@ The app helps users keep track of tasks even when connectivity is unreliable. It
 
 - Email/password authentication with email verification.
 - First-run onboarding.
-- Task CRUD with priority, category, due date, and reminder time.
+- Task CRUD with priority, category, due date, specific end time, and user-configured reminder time.
 - Search, filtering, sorting, pending/completed/overdue/due-today views.
 - Firestore Native Offline Persistence caching for fast, offline-capable task tracking.
 - Local task reminders, end-of-task notifications, and daily overdue summaries.
+- Rich task card UI with contextual chips: date+time, reminder time, DUE SOON (< 2 hrs), TODAY, OVERDUE with day count, days remaining, ON TIME, and FINISH. All chips wrap automatically — no overflow on any screen size.
 - Theme switching between system, light, and dark.
 - English and Hindi localization.
 - Profile setup and editing.
 - Streak tracking and leaderboard.
 - Android notification settings and battery optimization shortcuts.
+
 
 ## Technology Stack
 
@@ -51,6 +53,9 @@ The app uses manual dependency injection through constructors where needed. Prov
 - Android exact alarm and battery optimization constraints.
 - Localized notification text based on saved language preference.
 - Streak and leaderboard updates tied to task completion behavior.
+- Fixed a broken overdue detection that compared only the day-of-month instead of the full date, causing false overdue flags across month boundaries.
+- Flexible reminder UX: time pickers always visible, no minimum gap enforced between reminder and end time, user guided by toast messages rather than hard blocks.
+
 
 ## Current Business Status
 

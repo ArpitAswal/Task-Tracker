@@ -241,6 +241,7 @@ class TaskModel extends HiveObject {
     DateTime? updatedAt,
     DateTime? completedAt,
     TaskCategory? category,
+    bool clearReminder = false,
   }) {
     return TaskModel(
       id: id ?? this.id,
@@ -251,7 +252,7 @@ class TaskModel extends HiveObject {
       endDate: endDate ?? this.endDate,
       isCompleted: isCompleted ?? this.isCompleted,
       priority: priority ?? this.priority,
-      reminderAt: reminderAt ?? this.reminderAt,
+      reminderAt: clearReminder ? null : (reminderAt ?? this.reminderAt),
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       completedAt: completedAt ?? this.completedAt,
@@ -371,6 +372,7 @@ class TaskModel extends HiveObject {
   }
 
   bool get wasOverdue {
-    return (isCompleted && (completedAt?.difference(endDate).inDays ?? 0) > 0);
+    if (!isCompleted || completedAt == null) return false;
+    return completedAt!.isAfter(endDate);
   }
 }

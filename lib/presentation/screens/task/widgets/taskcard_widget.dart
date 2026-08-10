@@ -76,7 +76,7 @@ Widget buildTaskCard(TaskModel task, BuildContext context) {
       task.hasReminder && task.reminderAt!.isBefore(now) && !task.isCompleted;
 
   return Padding(
-    padding: EdgeInsets.only(top: isTablet ? 24 : 8),
+    padding: EdgeInsets.only(top: isTablet ? 24 : 16),
     child: Slidable(
       key: ValueKey(task.id),
       // Edit action only available on pending tasks
@@ -514,7 +514,8 @@ Future<void> _showDeleteConfirmation(
   final loc = AppLocalizations.of(context);
   final provider = context.read<TaskProvider>();
   final successMsg =
-      loc?.translate('task_delete') ?? 'Task Deleted Successfully';
+      loc?.translate('task_delete').replaceAll('{taskTitle}', task.title) ??
+      'Task \'${task.title}\' Deleted Successfully';
 
   final confirmed = await actionContext.showAlertDialog(
     title: loc?.translate('delete_task') ?? '',

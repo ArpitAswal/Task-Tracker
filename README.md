@@ -1,7 +1,7 @@
 ## App Logo
 Click on a logo to download the latest version of the app apk file:
 
-<a href="https://github.com/ArpitAswal/Task-Tracker/releases/download/v1.0.0/TaskTracker-app-v1.0.0-release.apk"><img width="96" height="96" alt="todo_image" src="https://github.com/user-attachments/assets/a80658be-b0a7-4e09-a8ea-2005eaacb136" />
+<a href="https://github.com/ArpitAswal/Task-Tracker/releases/download/v1.0_fixed/app-arm64-v8a-release.apk"><img width="96" height="96" alt="todo_image" src="https://github.com/user-attachments/assets/a80658be-b0a7-4e09-a8ea-2005eaacb136" />
 </a>
 
 # Task Tracker
@@ -31,17 +31,22 @@ Task Tracker is a Flutter productivity app for managing personal tasks with offl
 
 ### Task Management
 - Create, edit, complete, incomplete, and delete tasks
-- Optional description, priority, category, and reminder time
-- Validation for reminder timing
+- Optional description, priority, category, specific end time, and reminder time
+- Due date defaults to today when creating a new task
+- End time and reminder time pickers always visible during task creation/editing
+- Reminder time validated: past times show a descriptive error; no minimum gap enforced
 - Sorting and filtering support
+- Rich task card with contextual status chips: date + time, upcoming reminder, DUE SOON, TODAY, OVERDUE with day count, days remaining, ON TIME, FINISH, Reminder Sent
+
 
 ### Notifications
-- Task reminder notification at `reminderAt`
+- Task reminder notification at the user-configured `reminderAt` time
 - End-of-task notification at the task end time
 - Daily overdue summary notification
-- Global Task Reminders toggle in Settings
+- Global Task Reminders toggle in Settings (enables/disables all task notifications)
 - Re-scheduling of active reminders when notifications are turned back on
 - Android exact scheduling support for stronger idle-mode delivery
+
 
 ### Settings
 - Theme selection
@@ -60,15 +65,15 @@ Task Tracker is a Flutter productivity app for managing personal tasks with offl
 1. App launches and initializes Firebase, storage, and notifications.
 2. Splash screen checks onboarding, login state, and email verification.
 3. User is routed to:
-   - Onboarding on first launch
-   - Login if signed out
-   - Email verification if account is not verified
-   - Home dashboard if authenticated and verified
+    - Onboarding on first launch
+    - Login if signed out
+    - Email verification if account is not verified
+    - Home dashboard if authenticated and verified
 4. Home dashboard provides:
-   - Tasks
-   - Profile
-   - Leaderboard
-   - Settings
+    - Tasks
+    - Profile
+    - Leaderboard
+    - Settings
 
 ## Notification Behavior
 
@@ -76,10 +81,12 @@ Task Tracker is a Flutter productivity app for managing personal tasks with offl
 - Notifications are initialized during app startup.
 - Reminder scheduling is timezone-aware.
 - A task reminder is scheduled only if:
-  - the global notification toggle is enabled
-  - the task has a valid future reminder
-  - the task is not completed
+    - the global notification toggle is enabled
+    - the task has a valid future reminder
+    - the task is not completed
 - Completing or deleting a task cancels its scheduled notifications.
+- The user sets the exact reminder time during task creation or editing. The app does not apply any default time offset.
+
 
 ### Android battery saver / battery optimization
 Battery optimization can delay or suppress notifications on some Android devices.

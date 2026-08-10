@@ -91,9 +91,16 @@ class TaskProvider with ChangeNotifier {
   List<TaskModel> get pendingTasks =>
       _tasks.where((t) => t.isCompleted == false).toList();
 
-  /// Get completed tasks
-  List<TaskModel> get completedTasks =>
-      _tasks.where((t) => t.isCompleted).toList();
+  /// Get completed tasks (sorted by recently completed)
+  List<TaskModel> get completedTasks {
+    final completed = _tasks.where((t) => t.isCompleted).toList();
+    completed.sort((a, b) {
+      final timeA = a.completedAt ?? a.endDate;
+      final timeB = b.completedAt ?? b.endDate;
+      return timeB.compareTo(timeA);
+    });
+    return completed;
+  }
 
   /// Get overdue tasks
   List<TaskModel> get overdueTasks => _tasks
@@ -204,6 +211,8 @@ class TaskProvider with ChangeNotifier {
       _taskSubscription = _taskRepository.tasksStream(_userId!).listen(
         (tasks) async {
           _tasks = tasks;
+          _isInitialLoading = false;
+          notifyListeners();
           
           if (!_hasInitialSyncCompleted) {
             _hasInitialSyncCompleted = true;
@@ -212,9 +221,6 @@ class TaskProvider with ChangeNotifier {
           }
           
           await NotificationService.checkAndNotifyOverdueTasks(_tasks);
-          
-          _isInitialLoading = false;
-          notifyListeners();
         },
         onError: (e) {
           _errorMessage = e.toString();
@@ -279,6 +285,10 @@ class TaskProvider with ChangeNotifier {
         completedAt: null,
         isCompleted: false,
       );
+
+      // Optimistic update for instant UI feedback
+      _tasks = [task, ..._tasks];
+      notifyListeners();
 
       // APP FLOW: Save to Firestore instantly. Stream updates UI.
       await _taskRepository.createTask(task);

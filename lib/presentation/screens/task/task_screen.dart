@@ -18,6 +18,26 @@ class TaskTabView extends StatefulWidget {
 
 class _TaskTabViewState extends State<TaskTabView> {
   @override
+  void initState() {
+    super.initState();
+    widget.tabController.addListener(_handleTabSelection);
+  }
+
+  void _handleTabSelection() {
+    if (widget.tabController.indexIsChanging) return;
+    final provider = Provider.of<TaskProvider>(context, listen: false);
+    if (provider.tabviewIndex != widget.tabController.index) {
+      provider.setTabViewIndex(widget.tabController.index);
+    }
+  }
+
+  @override
+  void dispose() {
+    widget.tabController.removeListener(_handleTabSelection);
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context);
 

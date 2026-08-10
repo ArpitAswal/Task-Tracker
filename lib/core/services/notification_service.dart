@@ -114,10 +114,10 @@ class NotificationService {
         if (remainingMins > 0) {
           timeLeftStr = '${difference.inHours}hr ${remainingMins}m';
         } else {
-          timeLeftStr = '${difference.inHours} hour(s)';
+          timeLeftStr = '${difference.inHours} ${difference.inHours == 1 ? 'hour' : 'hours'}';
         }
       } else {
-        timeLeftStr = '${difference.inMinutes} minute(s)';
+        timeLeftStr = '${difference.inMinutes} ${difference.inMinutes == 1 ? 'minute' : 'minutes'}';
       }
 
       await _notifications.zonedSchedule(

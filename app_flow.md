@@ -69,9 +69,25 @@ Users can:
 - Sort by due date, creation date, or priority.
 - Categorize tasks as personal, work, or other.
 - Set priority as high, medium, or low.
-- Add optional reminders.
+- Set a specific end time for the task.
+- Add optional reminders at a user-chosen time.
 
-Task creation/editing validates reminder timing so reminders are in the future and before the task finish time.
+Task creation/editing behavior:
+
+- The due date defaults to today when creating a new task.
+- The End Of Task Time and Task Reminder Time pickers are always visible, regardless of which date is selected.
+- Changing the date preserves the previously chosen time-of-day for both pickers.
+- The only hard validation is that the reminder time cannot be in the past. If the time is invalid, a descriptive error toast guides the user; the form is not silently blocked.
+- There is no enforced minimum gap between the reminder time and the task end time. The user controls both independently.
+
+Task card visual states:
+
+- **Pending, future task**: shows due date + time, days remaining, and upcoming reminder time if set.
+- **Pending, due today**: shows date + time, a TODAY chip, and a DUE SOON chip if the task ends within 2 hours.
+- **Pending, overdue**: shows date + time, an OVERDUE chip with the number of days past due.
+- **Pending, reminder fired**: shows a muted "Reminder Sent" chip to indicate the reminder already ran.
+- **Completed on time**: shows completion date + time, an ON TIME chip, and a FINISH chip.
+- **Completed late**: shows completion date + time, an OVERDUE chip, and a FINISH chip.
 
 
 ## Offline And Sync Flow
@@ -138,11 +154,12 @@ Settings includes:
 - Theme: system, light, dark.
 - Language: English, Hindi.
 - Notification access status with a link to OS notification settings.
-- Task reminders global toggle.
+- Task reminders global toggle. When enabled, the user receives notifications at the time they configure for each task. The toggle does not enforce any default reminder offset.
 - Android battery optimization status and settings shortcut.
 - Delete all tasks.
 
 Deleting all tasks also resets the user's streak.
+
 
 ## Permissions And Platform Services
 

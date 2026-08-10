@@ -39,6 +39,7 @@ class _AddTaskSheetState extends State<AddTaskSheet> {
   late DateTime _reminderAt;
   late TaskPriority _priority;
   late TaskCategory _category;
+  bool _hasReminder = false;
 
   AppLocalizations? get l10n => AppLocalizations.of(context);
 
@@ -53,6 +54,7 @@ class _AddTaskSheetState extends State<AddTaskSheet> {
     _selectedDate = task?.endDate ?? now;
     _reminderAt =
         task?.reminderAt ?? _selectedDate.subtract(const Duration(hours: 1));
+    _hasReminder = task?.reminderAt != null;
 
     _priority = task?.priority ?? TaskPriority.medium;
     _category = task?.category ?? TaskCategory.other;
@@ -93,7 +95,7 @@ class _AddTaskSheetState extends State<AddTaskSheet> {
             "Selected date & time are already passed",
       );
       valid = false;
-    } else if (_reminderAt.isBefore(now)) {
+    } else if (_hasReminder && _reminderAt.isBefore(now)) {
       context.showErrorToast(
         l10n?.translate('reminder_passed') ?? "Reminder time passed",
       );
@@ -101,6 +103,85 @@ class _AddTaskSheetState extends State<AddTaskSheet> {
     }
 
     return valid;
+  }
+
+  Future<DateTime?> _pickDate(DateTime initialDate) {
+    return showDatePicker(
+      context: context,
+      initialDate: initialDate,
+      firstDate: DateTime.now(),
+      lastDate: DateTime.now().add(const Duration(days: 365)),
+      builder: (context, child) {
+        return Theme(
+          data: ThemeData().copyWith(
+            colorScheme: (context.isDarkMode)
+                ? ColorScheme.dark(
+                    primary: context.theme.colorScheme.secondary,
+                    onPrimary: context.theme.colorScheme.onPrimary,
+                    onSurface: context.theme.colorScheme.secondary,
+                  )
+                : ColorScheme.light(
+                    primary: context.theme.colorScheme.secondary,
+                    onPrimary: context.theme.colorScheme.onSecondary,
+                    onSurface: context.theme.colorScheme.onPrimary,
+                  ),
+            datePickerTheme: DatePickerThemeData(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(24.0),
+                side: BorderSide(color: context.colorScheme.primary, width: 2.0),
+              ),
+              cancelButtonStyle: context.theme.textButtonTheme.style,
+              confirmButtonStyle: context.theme.textButtonTheme.style,
+            ),
+          ),
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 600.0, maxHeight: 700.0),
+              child: child!,
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Future<TimeOfDay?> _pickTime(TimeOfDay initialTime) {
+    return showTimePicker(
+      context: context,
+      initialTime: initialTime,
+      builder: (context, child) {
+        return Theme(
+          data: ThemeData().copyWith(
+            textTheme: context.textTheme,
+            colorScheme: (context.isDarkMode)
+                ? ColorScheme.dark(
+                    primary: context.theme.colorScheme.secondary,
+                    onPrimary: context.theme.colorScheme.onPrimary,
+                    onSurface: context.theme.colorScheme.secondary,
+                  )
+                : ColorScheme.light(
+                    primary: context.theme.colorScheme.secondary,
+                    onPrimary: context.theme.colorScheme.onSecondary,
+                    onSurface: context.theme.colorScheme.onPrimary,
+                  ),
+            timePickerTheme: TimePickerThemeData(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(24.0),
+                side: BorderSide(color: context.colorScheme.primary, width: 2.0),
+              ),
+              cancelButtonStyle: context.theme.textButtonTheme.style,
+              confirmButtonStyle: context.theme.textButtonTheme.style,
+            ),
+          ),
+          child: Center(
+            child: Transform.scale(
+              scale: context.isTablet ? 1.5 : 0.9,
+              child: child!,
+            ),
+          ),
+        );
+      },
+    );
   }
 
   Future<void> _submit() async {
@@ -123,7 +204,8 @@ class _AddTaskSheetState extends State<AddTaskSheet> {
         title: title,
         description: description,
         endDate: _selectedDate,
-        reminderAt: _reminderAt,
+        reminderAt: _hasReminder ? _reminderAt : null,
+        clearReminder: !_hasReminder,
         priority: _priority,
         category: _category,
       );
@@ -134,7 +216,7 @@ class _AddTaskSheetState extends State<AddTaskSheet> {
         title: title,
         description: description,
         endDate: _selectedDate,
-        reminderAt: _reminderAt,
+        reminderAt: _hasReminder ? _reminderAt : null,
         priority: _priority,
         category: _category,
       );
@@ -214,9 +296,7 @@ class _AddTaskSheetState extends State<AddTaskSheet> {
       padding: EdgeInsets.only(
         left: 16,
         right: 16,
-        bottom: context.isTablet
-            ? 16
-             : (widget.isBottomSheet ? MediaQuery.of(context).viewInsets.bottom : 16),
+        bottom: MediaQuery.of(context).viewInsets.bottom + 16,
       ),
       child: SingleChildScrollView(
         child: Column(
@@ -232,7 +312,7 @@ class _AddTaskSheetState extends State<AddTaskSheet> {
                   controller: _titleController,
                   label: l10n?.taskTitleLabel ?? "Task Label",
                   error: provider.titleError,
-                  maxLength: 25,
+                  maxLength: 40,
                 );
               },
             ),
@@ -245,7 +325,7 @@ class _AddTaskSheetState extends State<AddTaskSheet> {
                   controller: _descriptionController,
                   label: l10n?.taskDescriptionLabel ?? "Description Label",
                   error: provider.descriptionError,
-                  maxLength: 60,
+                  maxLength: 80,
                 );
               },
             ),
@@ -255,58 +335,120 @@ class _AddTaskSheetState extends State<AddTaskSheet> {
               value: _priority,
               onChanged: (v) => setState(() => _priority = v),
             ),
-
             const SizedBox(height: 12),
             _CategoryDropdown(
               value: _category,
               onChanged: (v) => setState(() => _category = v),
             ),
 
-            const SizedBox(height: 8),
+            const SizedBox(height: 16),
 
-            _DatePickerTile(
-              date: _selectedDate,
-              onPick: (d) => setState(() {
-                _selectedDate = d;
-                _reminderAt = DateTime(
-                  d.year,
-                  d.month,
-                  d.day,
-                  _reminderAt.hour,
-                  _reminderAt.minute,
-                );
-              }),
+            Row(
+              children: [
+                _CompactPickerTile(
+                  title: l10n?.translate('due_date') ?? 'Due Date',
+                  value: DateFormat('MMM dd, yyyy').format(_selectedDate),
+                  icon: Icons.calendar_today,
+                  onTap: () async {
+                    final picked = await _pickDate(_selectedDate);
+                    if (picked != null && mounted) {
+                      setState(() {
+                        _selectedDate = picked.copyWith(
+                            hour: _selectedDate.hour, minute: _selectedDate.minute);
+                      });
+                    }
+                  },
+                ),
+                const SizedBox(width: 12),
+                _CompactPickerTile(
+                  title: l10n?.translate('finish_time') ?? 'End Of Task Time',
+                  value: TimeOfDay.fromDateTime(_selectedDate).format(context),
+                  icon: Icons.access_time,
+                  onTap: () async {
+                    final picked = await _pickTime(TimeOfDay.fromDateTime(_selectedDate));
+                    if (picked != null && mounted) {
+                      setState(() {
+                        _selectedDate = DateTime(
+                          _selectedDate.year,
+                          _selectedDate.month,
+                          _selectedDate.day,
+                          picked.hour,
+                          picked.minute,
+                        );
+                      });
+                    }
+                  },
+                ),
+              ],
             ),
 
-            const SizedBox(height: 8),
-            _TimePickerTile(
-              title: l10n?.translate('finish_time') ?? 'End Of Task Time',
-              time: TimeOfDay.fromDateTime(_selectedDate),
-              onPick: (t) => setState(() {
-                _selectedDate = DateTime(
-                  _selectedDate.year,
-                  _selectedDate.month,
-                  _selectedDate.day,
-                  t.hour,
-                  t.minute,
-                );
-              }),
+            const SizedBox(height: 16),
+            
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  l10n?.translate('set_reminder') ?? 'Set Reminder',
+                  style: context.textTheme.bodyLarge?.copyWith(
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                Transform.scale(
+                  scale: 0.85,
+                  child: Switch(
+                    value: _hasReminder,
+                    activeColor: context.colorScheme.primary,
+                    onChanged: (val) {
+                      setState(() {
+                        _hasReminder = val;
+                      });
+                    },
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(height: 8),
-            _TimePickerTile(
-              title:
-                  l10n?.translate('reminder_time') ?? 'Task Reminder Time',
-              time: TimeOfDay.fromDateTime(_reminderAt),
-              onPick: (t) => setState(() {
-                _reminderAt = DateTime(
-                  _selectedDate.year,
-                  _selectedDate.month,
-                  _selectedDate.day,
-                  t.hour,
-                  t.minute,
-                );
-              }),
-            ),
+            
+            if (_hasReminder) ...[
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  _CompactPickerTile(
+                    title: l10n?.translate('reminder_date') ?? 'Task Reminder Date',
+                    value: DateFormat('MMM dd, yyyy').format(_reminderAt),
+                    icon: Icons.calendar_today,
+                    onTap: () async {
+                      final picked = await _pickDate(_reminderAt);
+                      if (picked != null && mounted) {
+                        setState(() {
+                          _reminderAt = picked.copyWith(
+                              hour: _reminderAt.hour, minute: _reminderAt.minute);
+                        });
+                      }
+                    },
+                  ),
+                  const SizedBox(width: 12),
+                  _CompactPickerTile(
+                    title: l10n?.translate('reminder_time') ?? 'Task Reminder Time',
+                    value: TimeOfDay.fromDateTime(_reminderAt).format(context),
+                    icon: Icons.access_time,
+                    onTap: () async {
+                      final picked = await _pickTime(TimeOfDay.fromDateTime(_reminderAt));
+                      if (picked != null && mounted) {
+                        setState(() {
+                          _reminderAt = DateTime(
+                            _reminderAt.year,
+                            _reminderAt.month,
+                            _reminderAt.day,
+                            picked.hour,
+                            picked.minute,
+                          );
+                        });
+                      }
+                    },
+                  ),
+                ],
+              ),
+            ],
 
             const SizedBox(height: 12),
 
@@ -441,7 +583,12 @@ class _PriorityDropdown extends StatelessWidget {
                     : Colors.green,
               ),
               const SizedBox(width: 8),
-              Text(_priorityLabel(p, l10n)),
+              Expanded(
+                child: Text(
+                  _priorityLabel(p, l10n),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
             ],
           ),
         );
@@ -493,7 +640,12 @@ class _CategoryDropdown extends StatelessWidget {
                     : Colors.green,
               ),
               const SizedBox(width: 8),
-              Text(_categoryLabel(c, l10n)),
+              Expanded(
+                child: Text(
+                  _categoryLabel(c, l10n),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
             ],
           ),
         );
@@ -514,153 +666,64 @@ class _CategoryDropdown extends StatelessWidget {
   }
 }
 
-class _DatePickerTile extends StatelessWidget {
-  final DateTime date;
-  final ValueChanged<DateTime> onPick;
-
-  const _DatePickerTile({required this.date, required this.onPick});
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
-
-    return ListTile(
-      title: Text(l10n.dueDate),
-      titleTextStyle: context.textTheme.bodyLarge?.copyWith(
-        color: context.colorScheme.surface,
-      ),
-      subtitle: Text(DateFormat('MMM dd, yyyy').format(date)),
-      trailing: Icon(
-        Icons.calendar_today,
-        color: context.colorScheme.primary,
-        size: context.isTablet ? 36 : 24,
-      ),
-      onTap: () async {
-        final picked = await showDatePicker(
-          context: context,
-          initialDate: date,
-          firstDate: DateTime.now(),
-          lastDate: DateTime.now().add(const Duration(days: 365)),
-          builder: (context, child) {
-            return Theme(
-              data: ThemeData().copyWith(
-                colorScheme: (context.isDarkMode)
-                    ? ColorScheme.dark(
-                        primary: context.theme.colorScheme.secondary,
-                        onPrimary: context.theme.colorScheme.onPrimary,
-                        onSurface: context.theme.colorScheme.secondary,
-                      )
-                    : ColorScheme.light(
-                        primary: context.theme.colorScheme.secondary,
-                        onPrimary: context.theme.colorScheme.onSecondary,
-                        onSurface: context.theme.colorScheme.onPrimary,
-                      ),
-                datePickerTheme: DatePickerThemeData(
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(
-                      24.0,
-                    ), // Adjust to match your buttons
-                    side: BorderSide(
-                      color: context.colorScheme.primary,
-                      width: 2.0,
-                    ),
-                  ),
-                  cancelButtonStyle: context.theme.textButtonTheme.style,
-                  confirmButtonStyle: context.theme.textButtonTheme.style,
-                ),
-              ),
-              child: Center(
-                // Prevents the picker from stretching to fill the screen
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(
-                    maxWidth: 600.0, // Forces a mobile-like width on tablets
-                    maxHeight: 700.0, // Limits the height to reduce the gap
-                  ),
-                  child: child!,
-                ),
-              ),
-            );
-          },
-        );
-        if (picked != null) {
-          onPick(picked.copyWith(hour: date.hour, minute: date.minute));
-        }
-      },
-    );
-  }
-}
-
-class _TimePickerTile extends StatelessWidget {
+class _CompactPickerTile extends StatelessWidget {
   final String title;
-  final TimeOfDay time;
-  final ValueChanged<TimeOfDay> onPick;
+  final String value;
+  final IconData icon;
+  final VoidCallback onTap;
 
-  const _TimePickerTile({
+  const _CompactPickerTile({
     required this.title,
-    required this.time,
-    required this.onPick,
+    required this.value,
+    required this.icon,
+    required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    return ListTile(
-      title: Text(title),
-      titleTextStyle: context.textTheme.bodyLarge?.copyWith(
-        color: context.colorScheme.surface,
-      ),
-      subtitle: Text(time.format(context)),
-      trailing: Icon(
-        Icons.access_time_filled,
-        color: context.colorScheme.primary,
-        size: context.isTablet ? 36 : 24,
-      ),
-      onTap: () async {
-        final picked = await showTimePicker(
-          context: context,
-          initialTime: time,
-          builder: (context, child) {
-            return Theme(
-              data: ThemeData().copyWith(
-                textTheme: context.textTheme,
-                colorScheme: (context.isDarkMode)
-                    ? ColorScheme.dark(
-                        primary: context.theme.colorScheme.secondary,
-                        onPrimary: context.theme.colorScheme.onPrimary,
-                        onSurface: context.theme.colorScheme.secondary,
-                      )
-                    : ColorScheme.light(
-                        primary: context.theme.colorScheme.secondary,
-                        onPrimary: context.theme.colorScheme.onSecondary,
-                        onSurface: context.theme.colorScheme.onPrimary,
+    return Expanded(
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          decoration: BoxDecoration(
+            border: Border.all(
+                color: context.colorScheme.primary.withOpacity(0.5)),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: context.textTheme.labelSmall?.copyWith(
+                  color: context.colorScheme.onSurface.withOpacity(0.7),
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+              const SizedBox(height: 4),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Expanded(
+                    child: Text(
+                      value,
+                      style: context.textTheme.bodyMedium?.copyWith(
+                        fontWeight: FontWeight.w500,
                       ),
-                datePickerTheme: DatePickerThemeData(
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(
-                      24.0,
-                    ), // Adjust to match your buttons
-                    side: BorderSide(
-                      color: context.colorScheme.primary,
-                      width: 2.0,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
-                  cancelButtonStyle: context.theme.textButtonTheme.style,
-                  confirmButtonStyle: context.theme.textButtonTheme.style,
-                ),
+                  Icon(icon, size: 16, color: context.colorScheme.primary),
+                ],
               ),
-              child: Center(
-                child: Transform.scale(
-                  // Scale up by 30% if it's a tablet
-                  scale: context.isTablet ? 1.5 : 0.9,
-                  child: child!,
-                ),
-              ),
-            );
-          },
-        );
-        if (picked != null) {
-          onPick(picked);
-        }
-      },
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
