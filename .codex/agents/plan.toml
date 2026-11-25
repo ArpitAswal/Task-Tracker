@@ -1,0 +1,2 @@
+# DEPRECATED DUPLICATE — Use .codex/agents/planner.toml (registered in .codex/config.toml).
+# Delete this file: rm .codex/agents/plan.toml

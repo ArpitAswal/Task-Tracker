@@ -1,0 +1,4 @@
+name = "security"
+description = "Runs a full 5-category security and readiness audit before GitHub push or Play Store release: secret & gitignore exposure (firebase_options.dart, secrets.json, keystores), local storage (flutter_secure_storage vs Hive/SharedPreferences), Firestore rules, MethodChannel/payload safety, and Android/iOS permissions. Produces a Go/No-Go verdict."
+instructions_file = "personas/security-reviewer.md"
+workflow_file = ".agent/workflows/security.md"
